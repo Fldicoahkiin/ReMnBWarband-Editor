@@ -1,0 +1,607 @@
+import { Button, VerticalBox, HorizontalBox, ListView, ComboBox, LineEdit, GroupBox, ScrollView, TabWidget, CheckBox, SpinBox, TextEdit } from "std-widgets.slint";
+
+export component MainWindow inherits Window {
+    title: "R球编辑器 - 骑马与砍杀战团MOD编辑器";
+    min-width: 800px;
+    min-height: 600px;
+    preferred-width: 1200px;
+    preferred-height: 800px;
+    
+    // 属性
+    in-out property <bool> show-welcome: true;
+    in-out property <string> detection-status: "正在检测游戏...";
+    in-out property <bool> detection-in-progress: false;
+    in-out property <[string]> detected-games: [];
+    in-out property <string> selected-game: "";
+    in-out property <[string]> available-modules: [];
+    in-out property <string> selected-module: "";
+    in-out property <string> current-module: "";
+    in-out property <[string]> item-list: [];
+    in-out property <bool> show-about: false;
+    in-out property <[string]> factions: [];
+    in-out property <bool> show-notification: false;
+    in-out property <string> notification-message: "";
+    
+    // 回调函数
+    callback detect-games() -> [string];
+    callback select-game-folder() -> string;
+    callback get-modules-for-game(string) -> [string];
+    callback continue-to-editor();
+    callback load-from-game() -> [string];
+    callback select-item(string);
+    
+    VerticalBox {
+        // 顶部菜单栏
+        Rectangle {
+            height: 30px;
+            background: @linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+            
+            HorizontalBox {
+                padding-left: 15px;
+                padding-right: 15px;
+                padding-top: 5px;
+                padding-bottom: 5px;
+                spacing: 30px;
+                
+                Rectangle {
+                    width: 60px;
+                    height: 20px;
+                    background: file-touch.has-hover ? rgba(0, 0, 0, 0.1) : transparent;
+                    border-radius: 4px;
+                    
+                    animate background {
+                        duration: 200ms;
+                        easing: ease-in-out;
+                    }
+                    
+                    Text {
+                        text: "文件";
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: file-touch.pressed ? #4299e1 : (file-touch.has-hover ? #2d3748 : #718096);
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                    }
+                    
+                    file-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            // 文件菜单功能
+                        }
+                    }
+                }
+                
+                Rectangle {
+                    width: 60px;
+                    height: 20px;
+                    background: edit-touch.has-hover ? rgba(0, 0, 0, 0.1) : transparent;
+                    border-radius: 4px;
+                    
+                    animate background {
+                        duration: 200ms;
+                        easing: ease-in-out;
+                    }
+                    
+                    Text {
+                        text: "编辑";
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: edit-touch.pressed ? #4299e1 : (edit-touch.has-hover ? #2d3748 : #718096);
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                    }
+                    
+                    edit-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            // 编辑菜单功能
+                        }
+                    }
+                }
+                
+                Rectangle {
+                    width: 60px;
+                    height: 20px;
+                    background: tools-touch.has-hover ? rgba(0, 0, 0, 0.1) : transparent;
+                    border-radius: 4px;
+                    
+                    animate background {
+                        duration: 200ms;
+                        easing: ease-in-out;
+                    }
+                    
+                    Text {
+                        text: "工具";
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: tools-touch.pressed ? #4299e1 : (tools-touch.has-hover ? #2d3748 : #718096);
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                    }
+                    
+                    tools-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            // 工具菜单功能
+                        }
+                    }
+                }
+                
+                Rectangle {
+                    width: 60px;
+                    height: 20px;
+                    background: help-touch.has-hover ? rgba(0, 0, 0, 0.1) : transparent;
+                    border-radius: 4px;
+                    
+                    animate background {
+                        duration: 200ms;
+                        easing: ease-in-out;
+                    }
+                    
+                    Text {
+                        text: "帮助";
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: help-touch.pressed ? #4299e1 : (help-touch.has-hover ? #2d3748 : #718096);
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                    }
+                    
+                    help-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            show-about = true;
+                        }
+                    }
+                }
+                
+                Rectangle {} // 占位符，推送菜单到左侧
+            }
+        }
+        
+        // 主内容区域
+        if show-welcome: Rectangle {
+            background: @linear-gradient(180deg, #ffffff 0%, #f5f7fa 100%);
+            
+            VerticalBox {
+                alignment: center;
+                padding: 40px;
+                spacing: 40px;
+                
+                // 标题区域
+                VerticalBox {
+                    alignment: center;
+                    spacing: 15px;
+                    
+                    Text {
+                        text: "R球编辑器";
+                        font-size: 36px;
+                        font-weight: 700;
+                        color: #1a202c;
+                        horizontal-alignment: center;
+                    }
+                    
+                    Text {
+                        text: "Mount & Blade: Warband 模组编辑器";
+                        font-size: 18px;
+                        color: #718096;
+                        horizontal-alignment: center;
+                    }
+                }
+                
+                // 状态显示区域 - 仅在检测进行中时显示
+                if detection-in-progress: Rectangle {
+                    preferred-width: 500px;
+                    height: 50px;
+                    background: #e3f2fd;
+                    border-radius: 8px;
+                    border-width: 1px;
+                    border-color: #2196f3;
+                    
+                    Text {
+                        text: detection-status;
+                        font-size: 16px;
+                        color: #1976d2;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        font-weight: 500;
+                    }
+                }
+                
+                // 游戏选择区域
+                VerticalBox {
+                    alignment: center;
+                    spacing: 25px;
+                    width: 95%;
+                    max-width: 1000px;
+                    
+                    Text {
+                        text: "选择游戏安装目录";
+                        font-size: 20px;
+                        font-weight: 600;
+                        horizontal-alignment: center;
+                        color: #2d3748;
+                    }
+                    
+                    // 游戏路径选择控件
+                    HorizontalBox {
+                        alignment: stretch;
+                        spacing: 15px;
+                        padding-left: 20px;
+                        padding-right: 20px;
+                        max-width: 900px;
+                        
+                        LineEdit {
+                            text <=> selected-game;
+                            placeholder-text: "请输入游戏路径或从下拉列表选择";
+                            font-size: 14px;
+                            preferred-height: 45px;
+                            edited => {
+                                if (selected-game != "") {
+                                    available-modules = get-modules-for-game(selected-game);
+                                }
+                            }
+                        }
+                        
+                        Rectangle {
+                            preferred-width: 100px;
+                            height: 45px;
+                            background: browse-touch.has-hover ? #3182ce : #4299e1;
+                            border-radius: 8px;
+                            drop-shadow-blur: browse-touch.pressed ? 2px : 4px;
+                            drop-shadow-color: rgba(66, 153, 225, 0.3);
+                            
+                            animate background {
+                                duration: 200ms;
+                                easing: ease-in-out;
+                            }
+                            
+                            Text {
+                                text: "浏览";
+                                color: white;
+                                font-size: 14px;
+                                font-weight: 500;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                            
+                            browse-touch := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => {
+                                    selected-game = select-game-folder();
+                                    if (selected-game != "") {
+                                        available-modules = get-modules-for-game(selected-game);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 检测到的游戏路径列表
+                    if detected-games.length > 0: VerticalBox {
+                        alignment: center;
+                        spacing: 10px;
+                        max-width: 600px;
+                        
+                        Text {
+                            text: "检测到的游戏安装:";
+                            font-size: 14px;
+                            color: #666;
+                            horizontal-alignment: center;
+                        }
+                        
+                        for game-path in detected-games: Rectangle {
+                            height: 35px;
+                            background: #f8f9fa;
+                            border-radius: 5px;
+                            border-width: 1px;
+                            border-color: #dee2e6;
+                            
+                            Text {
+                                text: game-path;
+                                font-size: 12px;
+                                color: #495057;
+                                vertical-alignment: center;
+                                horizontal-alignment: center;
+                                wrap: word-wrap;
+                            }
+                            
+                            TouchArea {
+                                clicked => {
+                                    selected-game = game-path;
+                                    available-modules = get-modules-for-game(selected-game);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // MOD/剧本选择
+                if available-modules.length > 0: VerticalBox {
+                    alignment: center;
+                    spacing: 20px;
+                    max-width: 500px;
+                    
+                    Text {
+                        text: "选择MOD/剧本";
+                        font-size: 18px;
+                        font-weight: 600;
+                        color: #2d3748;
+                        horizontal-alignment: center;
+                    }
+                    
+                    ComboBox {
+                        preferred-width: 400px;
+                        model: available-modules;
+                        current-value <=> selected-module;
+                    }
+                }
+                
+                // 进入编辑器按钮
+                if selected-module != "": Rectangle {
+                    preferred-width: 160px;
+                    preferred-height: 45px;
+                    background: enter-touch.has-hover ? #38a169 : #48bb78;
+                    border-radius: 8px;
+                    drop-shadow-blur: enter-touch.pressed ? 3px : 6px;
+                    drop-shadow-color: rgba(72, 187, 120, 0.4);
+                    
+                    animate background {
+                        duration: 200ms;
+                        easing: ease-in-out;
+                    }
+                    
+                    animate drop-shadow-blur {
+                        duration: 150ms;
+                        easing: ease-out;
+                    }
+                    
+                    Text {
+                        text: "进入编辑器";
+                        color: white;
+                        font-size: 16px;
+                        font-weight: 600;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                    
+                    enter-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            continue-to-editor();
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 编辑器界面
+        if !show-welcome: HorizontalBox {
+            // 左侧导航
+            Rectangle {
+                width: 200px;
+                background: #f5f5f5;
+                
+                VerticalBox {
+                    padding: 15px;
+                    spacing: 10px;
+                    
+                    Text {
+                        text: "当前模组: " + current-module;
+                        font-size: 12px;
+                        wrap: word-wrap;
+                        color: #666;
+                    }
+                    
+                    Rectangle { height: 10px; }
+                    
+                    Button {
+                        text: "物品编辑";
+                        preferred-width: 100%;
+                    }
+                    
+                    Button {
+                        text: "兵种编辑";
+                        preferred-width: 100%;
+                    }
+                    
+                    Button {
+                        text: "派系编辑";
+                        preferred-width: 100%;
+                    }
+                    
+                    Rectangle {}
+                    
+                    Button {
+                        text: "返回欢迎页";
+                        preferred-width: 100%;
+                        clicked => {
+                            show-welcome = true;
+                        }
+                    }
+                }
+            }
+            
+            // 主编辑区域
+            Rectangle {
+                background: white;
+                
+                VerticalBox {
+                    padding: 20px;
+                    spacing: 20px;
+                    
+                    Text {
+                        text: "编辑器主界面";
+                        font-size: 24px;
+                        font-weight: 600;
+                        color: #2c3e50;
+                    }
+                    
+                    // 物品列表
+                    GroupBox {
+                        title: "物品列表";
+                        preferred-height: 300px;
+                        
+                        VerticalBox {
+                            ScrollView {
+                                ListView {
+                                    for item in item-list: Rectangle {
+                                        height: 30px;
+                                        background: #f8f9fa;
+                                        border-width: 1px;
+                                        border-color: #dee2e6;
+                                        
+                                        Text {
+                                            text: item;
+                                            vertical-alignment: center;
+                                            x: 10px;
+                                        }
+                                        
+                                        TouchArea {
+                                            clicked => {
+                                                select-item(item);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            HorizontalBox {
+                                alignment: center;
+                                padding: 10px;
+                                
+                                Button {
+                                    text: "重新加载";
+                                    preferred-width: 100px;
+                                    clicked => {
+                                        item-list = load-from-game();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // 通知弹窗
+    if show-notification: Rectangle {
+        x: 20px;
+        y: 50px;
+        width: 450px;
+        height: 60px;
+        background: #48bb78;
+        border-radius: 8px;
+        drop-shadow-blur: 10px;
+        drop-shadow-color: rgba(72, 187, 120, 0.2);
+        
+        // 添加淡入动画
+        opacity: show-notification ? 1.0 : 0.0;
+        animate opacity {
+            duration: 300ms;
+            easing: ease-in-out;
+        }
+        
+        HorizontalBox {
+            padding: 15px;
+            spacing: 10px;
+            alignment: space-between;
+            
+            Text {
+                text: notification-message;
+                font-size: 14px;
+                color: white;
+                vertical-alignment: center;
+                font-weight: 500;
+            }
+            
+            Rectangle {
+                width: 20px;
+                height: 20px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 10px;
+                
+                Text {
+                    text: "×";
+                    font-size: 16px;
+                    color: white;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                    font-weight: 700;
+                }
+                
+                TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => {
+                        show-notification = false;
+                    }
+                }
+            }
+        }
+    }
+    
+    // 关于对话框
+    if show-about: Rectangle {
+        background: rgba(0, 0, 0, 0.5);
+        
+        // 背景淡入动画
+        opacity: show-about ? 1.0 : 0.0;
+        animate opacity {
+            duration: 250ms;
+            easing: ease-in-out;
+        }
+        
+        Rectangle {
+            width: 400px;
+            height: 300px;
+            background: white;
+            border-radius: 10px;
+            x: (parent.width - self.width) / 2;
+            y: show-about ? (parent.height - self.height) / 2 : (parent.height - self.height) / 2 - 20px;
+            drop-shadow-blur: 20px;
+            drop-shadow-color: rgba(0, 0, 0, 0.3);
+            
+            animate y {
+                duration: 300ms;
+                easing: ease-out;
+            }
+            
+            VerticalBox {
+                padding: 30px;
+                spacing: 20px;
+                alignment: center;
+                
+                Text {
+                    text: "关于 R球编辑器";
+                    font-size: 20px;
+                    font-weight: 600;
+                    horizontal-alignment: center;
+                }
+                
+                Text {
+                    text: "版本: 0.0.1beta\n基于 Rust + Slint 构建\n支持骑马与砍杀战团MOD编辑";
+                    font-size: 14px;
+                    horizontal-alignment: center;
+                    color: #666;
+                }
+                
+                Rectangle {}
+                
+                Button {
+                    text: "关闭";
+                    preferred-width: 100px;
+                    clicked => {
+                        show-about = false;
+                    }
+                }
+            }
+        }
+        
+        TouchArea {
+            clicked => {
+                show-about = false;
+            }
+        }
+    }
+}

@@ -1,0 +1,601 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit, ComboBox, CheckBox, ScrollView, GroupBox, ListView } from "std-widgets.slint";
+
+export component TroopEditor inherits Rectangle {
+    // 回调函数
+    callback load_troops(string);
+    callback save_troops();
+    callback troop_selected(int);
+    callback create_new_troop();
+    callback delete_troop(int);
+    callback update_troop_property(string, string);
+    
+    // 属性
+    in property <string> current_troop_name: "";
+    in property <string> current_troop_id: "";
+    in property <int> current_troop_level: 1;
+    in property <int> current_troop_type: 0;
+    in property <[string]> troop_list: [];
+    in property <int> selected_troop_index: -1;
+    
+    background: white;
+    
+    HorizontalLayout {
+        padding: 0px;
+        
+        // 左侧兵种列表
+        Rectangle {
+            width: 320px;
+            background: #f8fafc;
+            border-width: 1px;
+            border-color: #e2e8f0;
+            
+            VerticalLayout {
+                padding: 16px;
+                spacing: 16px;
+                
+                // 标题和工具栏
+                HorizontalLayout {
+                    spacing: 12px;
+                    
+                    Text {
+                        text: "兵种列表";
+                        font-size: 18px;
+                        font-weight: 600;
+                        color: #1f2937;
+                        vertical-alignment: center;
+                    }
+                    
+                    Rectangle { } // 弹性空间
+                    
+                    Button {
+                        text: "+";
+                        width: 32px;
+                        height: 32px;
+                        clicked => { root.create_new_troop(); }
+                    }
+                }
+                
+                // 搜索框
+                LineEdit {
+                    placeholder-text: "搜索兵种...";
+                    font-size: 14px;
+                }
+                
+                // 兵种列表
+                ScrollView {
+                    ListView {
+                        for troop[index] in root.troop_list: Rectangle {
+                            height: 48px;
+                            background: index == root.selected_troop_index ? #3b82f6 : white;
+                            border-radius: 6px;
+                            
+                            HorizontalLayout {
+                                padding: 12px;
+                                spacing: 12px;
+                                
+                                Rectangle {
+                                    width: 24px;
+                                    height: 24px;
+                                    background: #ef4444;
+                                    border-radius: 4px;
+                                    
+                                    Text {
+                                        text: "⚔️";
+                                        font-size: 12px;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                                
+                                VerticalLayout {
+                                    spacing: 2px;
+                                    
+                                    Text {
+                                        text: troop;
+                                        font-size: 14px;
+                                        font-weight: 500;
+                                        color: index == root.selected_troop_index ? white : #374151;
+                                    }
+                                    
+                                    Text {
+                                        text: "等级 " + root.current_troop_level;
+                                        font-size: 12px;
+                                        color: index == root.selected_troop_index ? #e5e7eb : #6b7280;
+                                    }
+                                }
+                            }
+                            
+                            TouchArea {
+                                clicked => { root.troop_selected(index); }
+                            }
+                        }
+                    }
+                }
+                
+                // 底部工具栏
+                HorizontalLayout {
+                    spacing: 8px;
+                    
+                    Button {
+                        text: "加载";
+                        clicked => { root.load_troops("troops.txt"); }
+                    }
+                    
+                    Button {
+                        text: "保存";
+                        clicked => { root.save_troops(); }
+                    }
+                    
+                    Button {
+                        text: "删除";
+                        enabled: root.selected_troop_index >= 0;
+                        clicked => { root.delete_troop(root.selected_troop_index); }
+                    }
+                }
+            }
+        }
+        
+        // 右侧编辑区域
+        Rectangle {
+            background: white;
+            
+            VerticalLayout {
+                padding: 24px;
+                spacing: 24px;
+                
+                // 标题栏
+                HorizontalLayout {
+                    Text {
+                        text: "兵种编辑器";
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: #111827;
+                    }
+                    
+                    Rectangle { } // 弹性空间
+                    
+                    Text {
+                        text: root.current_troop_id != "" ? "编辑: " + root.current_troop_id : "请选择兵种";
+                        font-size: 14px;
+                        color: #6b7280;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                ScrollView {
+                    VerticalLayout {
+                        spacing: 20px;
+                        
+                        // 基础信息
+                        GroupBox {
+                            title: "基础信息";
+                            
+                            VerticalLayout {
+                                spacing: 16px;
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "兵种ID";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            text: root.current_troop_id;
+                                            placeholder-text: "输入兵种ID...";
+                                            edited(text) => {
+                                                root.update_troop_property("id", text);
+                                            }
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "显示名称";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            text: root.current_troop_name;
+                                            placeholder-text: "输入显示名称...";
+                                            edited(text) => {
+                                                root.update_troop_property("name", text);
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "兵种类型";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        ComboBox {
+                                            model: ["步兵", "弓箭手", "骑兵", "领主", "英雄"];
+                                            current-index: root.current_troop_type;
+                                            selected(value) => {
+                                                root.update_troop_property("type", value);
+                                            }
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "等级";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            text: root.current_troop_level;
+                                            placeholder-text: "1";
+                                            edited(text) => {
+                                                root.update_troop_property("level", text);
+                                            }
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "经验值";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 属性点
+                        GroupBox {
+                            title: "属性点";
+                            
+                            VerticalLayout {
+                                spacing: 16px;
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "力量";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "10";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "敏捷";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "10";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "智力";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "10";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "魅力";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "10";
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 技能
+                        GroupBox {
+                            title: "技能";
+                            
+                            VerticalLayout {
+                                spacing: 16px;
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "铁骨";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "强弓";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "强掷";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "骑术";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                }
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "跑动";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "盾防";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "武器掌握";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "战术";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 武器熟练度
+                        GroupBox {
+                            title: "武器熟练度";
+                            
+                            VerticalLayout {
+                                spacing: 16px;
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "单手武器";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "双手武器";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "长柄武器";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "弓箭";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                }
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "弩";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                    
+                                    VerticalLayout {
+                                        spacing: 6px;
+                                        
+                                        Text {
+                                            text: "投掷";
+                                            font-size: 14px;
+                                            font-weight: 500;
+                                            color: #374151;
+                                        }
+                                        
+                                        LineEdit {
+                                            placeholder-text: "0";
+                                        }
+                                    }
+                                    
+                                    Rectangle { }
+                                    Rectangle { }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

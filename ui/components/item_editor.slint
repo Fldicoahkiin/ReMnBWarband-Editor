@@ -1,0 +1,394 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit, ComboBox, CheckBox, ScrollView, GroupBox, ListView } from "std-widgets.slint";
+
+export component ItemEditor inherits Rectangle {
+    // 回调函数
+    callback load_items(string);
+    callback save_items();
+    callback item_selected(int);
+    callback create_new_item();
+    callback delete_item(int);
+    callback update_item_property(string, string);
+    
+    // 属性
+    in property <string> current_item_name: "";
+    in property <string> current_item_id: "";
+    in property <int> current_item_type: 0;
+    in property <float> current_item_weight: 0.0;
+    in property <int> current_item_price: 0;
+    in property <[string]> item_list: [];
+    in property <int> selected_item_index: -1;
+    
+    background: #f0f0f0;
+    
+    HorizontalLayout {
+        padding: 4px;
+        spacing: 4px;
+        
+        // 左侧物品列表
+        Rectangle {
+            width: 300px;
+            background: white;
+            border-width: 1px;
+            border-color: #808080;
+            
+            VerticalLayout {
+                padding: 8px;
+                spacing: 8px;
+                
+                // 标题栏
+                Rectangle {
+                    height: 24px;
+                    background: #e0e0e0;
+                    border-width: 1px;
+                    border-color: #808080;
+                    
+                    Text {
+                        text: "物品列表";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #333;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                // 物品列表
+                ScrollView {
+                    ListView {
+                        for item[index] in root.item_list: Rectangle {
+                            height: 20px;
+                            background: index == root.selected_item_index ? #316ac5 : white;
+                            border-width: 1px;
+                            border-color: #c0c0c0;
+                            
+                            HorizontalLayout {
+                                padding-left: 4px;
+                                padding-right: 4px;
+                                
+                                Text {
+                                    text: item;
+                                    font-size: 11px;
+                                    color: index == root.selected_item_index ? white : #333;
+                                    vertical-alignment: center;
+                                }
+                            }
+                            
+                            TouchArea {
+                                clicked => { root.item_selected(index); }
+                            }
+                        }
+                    }
+                }
+                
+                // 底部工具栏
+                HorizontalLayout {
+                    spacing: 4px;
+                    
+                    Button {
+                        text: "新建";
+                        width: 50px;
+                        height: 24px;
+                        clicked => { root.create_new_item(); }
+                    }
+                    
+                    Button {
+                        text: "删除";
+                        width: 50px;
+                        height: 24px;
+                        enabled: root.selected_item_index >= 0;
+                        clicked => { root.delete_item(root.selected_item_index); }
+                    }
+                }
+            }
+        }
+        
+        // 右侧编辑区域
+        Rectangle {
+            background: #f0f0f0;
+            
+            VerticalLayout {
+                padding: 8px;
+                spacing: 8px;
+                
+                // 标题栏
+                Rectangle {
+                    height: 24px;
+                    background: #e0e0e0;
+                    border-width: 1px;
+                    border-color: #808080;
+                    
+                    Text {
+                        text: root.current_item_id != "" ? "编辑物品: " + root.current_item_id : "物品属性";
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #333;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                ScrollView {
+                    VerticalLayout {
+                        spacing: 8px;
+                        
+                        // 基础信息
+                        GroupBox {
+                            title: "基础信息";
+                            
+                            VerticalLayout {
+                                padding: 8px;
+                                spacing: 8px;
+                                
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    
+                                    Text {
+                                        text: "物品ID:";
+                                        font-size: 11px;
+                                        color: #333;
+                                        width: 60px;
+                                        vertical-alignment: center;
+                                    }
+                                    
+                                    LineEdit {
+                                        text: root.current_item_id;
+                                        height: 20px;
+                                        font-size: 11px;
+                                        edited(text) => {
+                                            root.update_item_property("id", text);
+                                        }
+                                    }
+                                }
+                                
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    
+                                    Text {
+                                        text: "名称:";
+                                        font-size: 11px;
+                                        color: #333;
+                                        width: 60px;
+                                        vertical-alignment: center;
+                                    }
+                                    
+                                    LineEdit {
+                                        text: root.current_item_name;
+                                        height: 20px;
+                                        font-size: 11px;
+                                        edited(text) => {
+                                            root.update_item_property("name", text);
+                                        }
+                                    }
+                                }
+                                
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    
+                                    Text {
+                                        text: "类型:";
+                                        font-size: 11px;
+                                        color: #333;
+                                        width: 60px;
+                                        vertical-alignment: center;
+                                    }
+                                    
+                                    ComboBox {
+                                        model: ["武器", "护甲", "盾牌", "弓箭", "箭矢", "马匹", "书籍", "食物", "其他"];
+                                        current-index: root.current_item_type;
+                                        height: 20px;
+                                        selected(value) => {
+                                            root.update_item_property("type", value);
+                                        }
+                                    }
+                                }
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    HorizontalLayout {
+                                        spacing: 8px;
+                                        
+                                        Text {
+                                            text: "重量:";
+                                            font-size: 11px;
+                                            color: #333;
+                                            width: 40px;
+                                            vertical-alignment: center;
+                                        }
+                                        
+                                        LineEdit {
+                                            text: root.current_item_weight;
+                                            width: 60px;
+                                            height: 20px;
+                                            font-size: 11px;
+                                            edited(text) => {
+                                                root.update_item_property("weight", text);
+                                            }
+                                        }
+                                    }
+                                    
+                                    HorizontalLayout {
+                                        spacing: 8px;
+                                        
+                                        Text {
+                                            text: "价格:";
+                                            font-size: 11px;
+                                            color: #333;
+                                            width: 40px;
+                                            vertical-alignment: center;
+                                        }
+                                        
+                                        LineEdit {
+                                            text: root.current_item_price;
+                                            width: 60px;
+                                            height: 20px;
+                                            font-size: 11px;
+                                            edited(text) => {
+                                                root.update_item_property("price", text);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 武器属性
+                        GroupBox {
+                            title: "武器属性";
+                            
+                            VerticalLayout {
+                                padding: 8px;
+                                spacing: 8px;
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    HorizontalLayout {
+                                        spacing: 8px;
+                                        
+                                        Text {
+                                            text: "伤害:";
+                                            font-size: 11px;
+                                            color: #333;
+                                            width: 40px;
+                                            vertical-alignment: center;
+                                        }
+                                        
+                                        LineEdit {
+                                            width: 60px;
+                                            height: 20px;
+                                            font-size: 11px;
+                                        }
+                                    }
+                                    
+                                    HorizontalLayout {
+                                        spacing: 8px;
+                                        
+                                        Text {
+                                            text: "速度:";
+                                            font-size: 11px;
+                                            color: #333;
+                                            width: 40px;
+                                            vertical-alignment: center;
+                                        }
+                                        
+                                        LineEdit {
+                                            width: 60px;
+                                            height: 20px;
+                                            font-size: 11px;
+                                        }
+                                    }
+                                }
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    HorizontalLayout {
+                                        spacing: 8px;
+                                        
+                                        Text {
+                                            text: "触及:";
+                                            font-size: 11px;
+                                            color: #333;
+                                            width: 40px;
+                                            vertical-alignment: center;
+                                        }
+                                        
+                                        LineEdit {
+                                            width: 60px;
+                                            height: 20px;
+                                            font-size: 11px;
+                                        }
+                                    }
+                                    
+                                    HorizontalLayout {
+                                        spacing: 8px;
+                                        
+                                        Text {
+                                            text: "伤害类型:";
+                                            font-size: 11px;
+                                            color: #333;
+                                            width: 60px;
+                                            vertical-alignment: center;
+                                        }
+                                        
+                                        ComboBox {
+                                            model: ["砍击", "刺击", "钝击"];
+                                            height: 20px;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 物品标志
+                        GroupBox {
+                            title: "物品标志";
+                            
+                            VerticalLayout {
+                                padding: 8px;
+                                spacing: 6px;
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    CheckBox {
+                                        text: "可交易";
+                                    }
+                                    
+                                    CheckBox {
+                                        text: "双手武器";
+                                    }
+                                }
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    CheckBox {
+                                        text: "可穿透盾牌";
+                                    }
+                                    
+                                    CheckBox {
+                                        text: "击倒效果";
+                                    }
+                                }
+                                
+                                HorizontalLayout {
+                                    spacing: 16px;
+                                    
+                                    CheckBox {
+                                        text: "破盾效果";
+                                    }
+                                    
+                                    CheckBox {
+                                        text: "不平衡";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
