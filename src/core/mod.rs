@@ -8,6 +8,7 @@ pub mod python_manager;
 pub mod validator;
 pub mod parser;
 pub mod menu_manager;
+pub mod script_reader;
 
 use anyhow::Result;
 use std::path::Path;

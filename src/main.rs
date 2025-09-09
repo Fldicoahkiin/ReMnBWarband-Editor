@@ -207,31 +207,66 @@ fn main() -> Result<(), slint::PlatformError> {
     });
     
     let ui_handle = ui.as_weak();
-    let _am = app_manager.clone();
+    let am = app_manager.clone();
     ui.on_continue_to_editor(move || {
         if let Some(ui) = ui_handle.upgrade() {
             ui.set_show_welcome(false);
-            ui.set_current_module("Native".into());
             
-            let items = vec![
-                "长剑".to_string(),
-                "战斧".to_string(), 
-                "弓箭".to_string(),
-                "盾牌".to_string(),
-                "头盔".to_string(),
-                "铠甲".to_string(),
-                "战马".to_string(),
-            ];
-            let item_strings: Vec<slint::SharedString> = items.into_iter().map(|s| s.into()).collect();
-            let model = std::rc::Rc::new(slint::VecModel::from(item_strings));
+            let selected_game = ui.get_selected_game();
+            let selected_module = ui.get_selected_module();
+            
+            // 设置当前游戏和模组
+            {
+                let selected_module_str = selected_module.as_str().to_string();
+                let installation_clone;
+                let module_clone;
+                
+                {
+                    let am_borrow = am.borrow();
+                    let detector = am_borrow.game_detector();
+                    let detector_borrow = detector.borrow();
+                    let installations = detector_borrow.get_installations();
+                    
+                    if let Some(installation) = installations.iter().find(|inst| 
+                        inst.path.display().to_string() == selected_game.as_str()) {
+                        
+                        if let Some(module) = installation.modules.iter().find(|m| 
+                            m.name == selected_module.as_str()) {
+                            
+                            installation_clone = installation.clone();
+                            module_clone = module.clone();
+                        } else {
+                            return;
+                        }
+                    } else {
+                        return;
+                    }
+                }
+                
+                // 现在可以安全地设置游戏和模组
+                if let Err(e) = am.borrow().set_current_game(installation_clone) {
+                    tracing::error!("设置游戏失败: {}", e);
+                }
+                
+                if let Err(e) = am.borrow().set_current_module(module_clone) {
+                    tracing::error!("设置模组失败: {}", e);
+                }
+                
+                ui.set_current_module(selected_module);
+                tracing::info!("已设置游戏: {} 模组: {}", selected_game, selected_module_str);
+            }
+            
+            // 初始化空的物品列表
+            let empty_items: Vec<slint::SharedString> = vec![];
+            let model = std::rc::Rc::new(slint::VecModel::from(empty_items));
             ui.set_item_list(slint::ModelRc::from(model));
-            
         }
     });
     
-    let _ui_handle = ui.as_weak();
+    let ui_handle = ui.as_weak();
     let am = app_manager.clone();
     ui.on_load_from_game(move || {
+        tracing::info!("开始从游戏加载数据");
         match am.borrow().load_from_game() {
             Ok(_) => {
                 let am_borrow = am.borrow();
@@ -241,9 +276,19 @@ fn main() -> Result<(), slint::PlatformError> {
                 let item_names: Vec<slint::SharedString> = items.iter()
                     .map(|item| item.name.clone().into())
                     .collect();
-                        std::rc::Rc::new(slint::VecModel::from(item_names)).into()
+                tracing::info!("准备显示 {} 个物品到UI", item_names.len());
+                
+                // 更新UI中的物品列表
+                if let Some(ui) = ui_handle.upgrade() {
+                    let model = std::rc::Rc::new(slint::VecModel::from(item_names.clone()));
+                    ui.set_item_list(slint::ModelRc::from(model));
+                    tracing::info!("已更新UI物品列表");
+                }
+                
+                std::rc::Rc::new(slint::VecModel::from(item_names)).into()
             }
             Err(e) => {
+                tracing::error!("从游戏加载数据失败: {}", e);
                 std::rc::Rc::new(slint::VecModel::from(Vec::<slint::SharedString>::new())).into()
             }
         }

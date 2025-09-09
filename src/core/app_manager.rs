@@ -3,11 +3,14 @@ use std::rc::Rc;
 use anyhow::Result;
 
 use crate::core::{
-    item_manager::ItemManager, 
-    troop_manager::TroopManager, trigger_manager::TriggerManager,
-    file_manager::FileManager, validator::DataValidator,
+    item_manager::ItemManager,
+    troop_manager::TroopManager,
+    trigger_manager::TriggerManager,
+    file_manager::FileManager,
     python_manager::PythonManager,
-    game_detector::{GameDetector, ScriptReader, GameInstallation, ModuleInfo}
+    game_detector::{GameDetector, GameInstallation, ModuleInfo},
+    script_reader::ScriptReader,
+    validator::DataValidator,
 };
 
 /// 应用程序管理器 - 统一管理所有功能模块
