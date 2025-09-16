@@ -1,0 +1,169 @@
+// 启动页面 - 游戏路径选择界面
+
+import { Colors, Spacing, BorderRadius, Typography } from "../globals/styles.slint";
+import { AppBridge, UiState } from "../globals/bridges.slint";
+import { Button, ButtonVariant, ButtonSize } from "../components/button.slint";
+import { Card } from "../components/card.slint";
+
+export component StartupPage {
+    VerticalLayout {
+        padding: Spacing.xxl;
+        spacing: Spacing.xl;
+        alignment: center;
+        
+        // 标题区域
+        VerticalLayout {
+            spacing: Spacing.md;
+            alignment: center;
+            
+            // 应用图标和标题
+            Text {
+                text: "ReMnBWarband 编辑器";
+                font-size: Typography.text-3xl;
+                font-weight: Typography.weight-bold;
+                color: Colors.text-primary;
+                horizontal-alignment: center;
+            }
+            
+            Text {
+                text: "骑马与砍杀：战团 模组编辑工具";
+                font-size: Typography.text-lg;
+                color: Colors.text-secondary;
+                horizontal-alignment: center;
+            }
+        }
+        
+        // 主要内容区域
+        Card {
+            width: 600px;
+            
+            VerticalLayout {
+                spacing: Spacing.lg;
+                
+                // 游戏路径配置
+                VerticalLayout {
+                    spacing: Spacing.md;
+                    
+                    Text {
+                        text: "游戏路径配置";
+                        font-size: Typography.text-xl;
+                        font-weight: Typography.weight-semibold;
+                        color: Colors.text-primary;
+                    }
+                    
+                    Text {
+                        text: "请选择《骑马与砍杀：战团》的安装路径";
+                        font-size: Typography.text-base;
+                        color: Colors.text-secondary;
+                    }
+                    
+                    // 路径显示和选择
+                    HorizontalLayout {
+                        spacing: Spacing.md;
+                        alignment: stretch;
+                        
+                        // 路径显示框
+                        Rectangle {
+                            background: Colors.surface;
+                            border-radius: BorderRadius.md;
+                            border-width: 1px;
+                            border-color: Colors.border;
+                            height: 40px;
+                            
+                            HorizontalLayout {
+                                padding-left: Spacing.md;
+                                padding-right: Spacing.md;
+                                alignment: start;
+                                
+                                Text {
+                                    text: AppBridge.game-path == "" ? "未选择游戏路径" : AppBridge.game-path;
+                                    font-size: Typography.text-base;
+                                    color: AppBridge.game-path == "" ? Colors.text-muted : Colors.text-primary;
+                                    vertical-alignment: center;
+                                    overflow: elide;
+                                }
+                            }
+                        }
+                        
+                        // 选择按钮
+                        Button {
+                            text: "选择路径";
+                            variant: ButtonVariant.outline;
+                            
+                            clicked => {
+                                AppBridge.game-path = AppBridge.browse-folder();
+                            }
+                        }
+                    }
+                    
+                    // 自动检测按钮
+                    HorizontalLayout {
+                        alignment: center;
+                        
+                        Button {
+                            text: "自动检测游戏";
+                            variant: ButtonVariant.secondary;
+                            
+                            clicked => {
+                                AppBridge.detect-game();
+                            }
+                        }
+                    }
+                }
+                
+                // 分隔线
+                Rectangle {
+                    height: 1px;
+                    background: Colors.border;
+                }
+                
+                // 操作按钮区域
+                HorizontalLayout {
+                    spacing: Spacing.md;
+                    alignment: end;
+                    
+                    Button {
+                        text: "退出";
+                        variant: ButtonVariant.ghost;
+                        
+                        clicked => {
+                            // 退出应用
+                        }
+                    }
+                    
+                    Button {
+                        text: "继续";
+                        variant: ButtonVariant.primary;
+                        disabled: AppBridge.game-path == "";
+                        
+                        clicked => {
+                            // 游戏路径已配置，加载游戏数据
+                            AppBridge.load-game(AppBridge.game-path);
+                            UiState.current-page = 1; // 切换到主编辑器
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 底部信息
+        VerticalLayout {
+            spacing: Spacing.sm;
+            alignment: center;
+            
+            Text {
+                text: "版本 0.1.0-beta";
+                font-size: Typography.text-sm;
+                color: Colors.text-muted;
+                horizontal-alignment: center;
+            }
+            
+            Text {
+                text: "支持《骑马与砍杀：战团》1.174版本";
+                font-size: Typography.text-sm;
+                color: Colors.text-muted;
+                horizontal-alignment: center;
+            }
+        }
+    }
+}

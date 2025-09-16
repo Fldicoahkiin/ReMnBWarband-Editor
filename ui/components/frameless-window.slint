@@ -1,0 +1,213 @@
+// 无框架窗口组件
+
+import { Colors, Spacing, BorderRadius, Typography } from "../globals/styles.slint";
+import { WindowControlBridge } from "../globals/bridges.slint";
+
+export component FramelessWindow inherits Window {
+    in property <string> window-title: "ReMnBWarband 编辑器";
+    in property <bool> resizable: true;
+    
+    // 窗口属性
+    no-frame: true;
+    background: Colors.background;
+    
+    // 主容器
+    container := Rectangle {
+        background: Colors.background;
+        border-radius: BorderRadius.lg;
+        drop-shadow-blur: 20px;
+        drop-shadow-color: Colors.shadow-strong;
+        drop-shadow-offset-y: 8px;
+        
+        // 标题栏
+        title-bar := Rectangle {
+            height: 40px;
+            background: Colors.surface;
+            border-radius: BorderRadius.lg;
+            
+            // 标题栏拖拽区域
+            drag-area := TouchArea {
+                width: parent.width - 120px; // 为窗口控制按钮留空间
+                height: parent.height;
+                
+                moved => {
+                    WindowControlBridge.drag-window();
+                }
+            }
+            
+            HorizontalLayout {
+                padding: Spacing.sm;
+                spacing: Spacing.sm;
+                alignment: space-between;
+                
+                // 标题
+                HorizontalLayout {
+                    alignment: start;
+                    
+                    Text {
+                        text: root.window-title;
+                        font-size: Typography.text-base;
+                        font-weight: Typography.weight-medium;
+                        color: Colors.text-primary;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                // 窗口控制按钮
+                HorizontalLayout {
+                    spacing: Spacing.xs;
+                    alignment: end;
+                    
+                    // 最小化按钮
+                    minimize-btn := Rectangle {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: BorderRadius.sm;
+                        background: minimize-area.has-hover ? Colors.surface-hover : transparent;
+                        
+                        minimize-area := TouchArea {
+                            clicked => {
+                                WindowControlBridge.minimize-window();
+                            }
+                        }
+                        
+                        Rectangle {
+                            width: 12px;
+                            height: 2px;
+                            background: Colors.text-secondary;
+                            x: (parent.width - self.width) / 2;
+                            y: (parent.height - self.height) / 2;
+                        }
+                    }
+                    
+                    // 最大化/还原按钮
+                    maximize-btn := Rectangle {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: BorderRadius.sm;
+                        background: maximize-area.has-hover ? Colors.surface-hover : transparent;
+                        
+                        maximize-area := TouchArea {
+                            clicked => {
+                                WindowControlBridge.toggle-maximize();
+                            }
+                        }
+                        
+                        Rectangle {
+                            width: 12px;
+                            height: 12px;
+                            border-width: 2px;
+                            border-color: Colors.text-secondary;
+                            background: transparent;
+                            x: (parent.width - self.width) / 2;
+                            y: (parent.height - self.height) / 2;
+                        }
+                    }
+                    
+                    // 关闭按钮
+                    close-btn := Rectangle {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: BorderRadius.sm;
+                        background: close-area.has-hover ? Colors.error : transparent;
+                        
+                        close-area := TouchArea {
+                            clicked => {
+                                WindowControlBridge.close-window();
+                            }
+                        }
+                        
+                        // X 图标
+                        Path {
+                            width: 12px;
+                            height: 12px;
+                            x: (parent.width - self.width) / 2;
+                            y: (parent.height - self.height) / 2;
+                            fill: close-area.has-hover ? Colors.background : Colors.text-secondary;
+                            commands: "M 2 2 L 10 10 M 10 2 L 2 10";
+                            stroke: close-area.has-hover ? Colors.background : Colors.text-secondary;
+                            stroke-width: 2px;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 内容区域
+        content-area := Rectangle {
+            y: title-bar.height;
+            height: parent.height - title-bar.height;
+            width: parent.width;
+            
+            @children
+        }
+        
+        // 窗口边缘调整大小区域（如果启用）
+        if root.resizable: resize-areas := Rectangle {
+            // 顶部边缘
+            top-resize := TouchArea {
+                height: 4px;
+                width: parent.width;
+                y: 0;
+                mouse-cursor: ns-resize;
+            }
+            
+            // 底部边缘
+            bottom-resize := TouchArea {
+                height: 4px;
+                width: parent.width;
+                y: parent.height - self.height;
+                mouse-cursor: ns-resize;
+            }
+            
+            // 左边缘
+            left-resize := TouchArea {
+                width: 4px;
+                height: parent.height;
+                x: 0;
+                mouse-cursor: ew-resize;
+            }
+            
+            // 右边缘
+            right-resize := TouchArea {
+                width: 4px;
+                height: parent.height;
+                x: parent.width - self.width;
+                mouse-cursor: ew-resize;
+            }
+            
+            // 四个角落
+            top-left-resize := TouchArea {
+                width: 8px;
+                height: 8px;
+                x: 0;
+                y: 0;
+                mouse-cursor: nw-resize;
+            }
+            
+            top-right-resize := TouchArea {
+                width: 8px;
+                height: 8px;
+                x: parent.width - self.width;
+                y: 0;
+                mouse-cursor: ne-resize;
+            }
+            
+            bottom-left-resize := TouchArea {
+                width: 8px;
+                height: 8px;
+                x: 0;
+                y: parent.height - self.height;
+                mouse-cursor: sw-resize;
+            }
+            
+            bottom-right-resize := TouchArea {
+                width: 8px;
+                height: 8px;
+                x: parent.width - self.width;
+                y: parent.height - self.height;
+                mouse-cursor: se-resize;
+            }
+        }
+    }
+}

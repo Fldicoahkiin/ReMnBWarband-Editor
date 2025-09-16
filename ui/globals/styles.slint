@@ -1,0 +1,204 @@
+// 全局样式定义
+
+// 调色板结构
+export struct Palette {
+    // 窗口基础色
+    window-bg: color,
+    window-fg: color,
+    
+    // 主色调
+    primary-bg: color,
+    primary-fg: color,
+    primary-hover: color,
+    
+    // 表面色
+    surface-bg: color,
+    surface-fg: color,
+    surface-hover: color,
+    
+    // 层级色
+    layer-1: color,
+    layer-2: color,
+    layer-3: color,
+    
+    // 状态色
+    success-bg: color,
+    success-fg: color,
+    warning-bg: color,
+    warning-fg: color,
+    error-bg: color,
+    error-fg: color,
+    info-bg: color,
+    info-fg: color,
+    
+    // 边框色
+    border: color,
+    border-hover: color,
+    
+    // 阴影色
+    shadow: color,
+    shadow-strong: color,
+}
+
+// 浅色主题调色板
+export global LightPalette {
+    out property <Palette> palette: {
+        window-bg: #ffffff,
+        window-fg: #0f172a,
+        
+        primary-bg: #2563eb,
+        primary-fg: #ffffff,
+        primary-hover: #1d4ed8,
+        
+        surface-bg: #f8fafc,
+        surface-fg: #334155,
+        surface-hover: #f1f5f9,
+        
+        layer-1: #f8fafc,
+        layer-2: #f1f5f9,
+        layer-3: #e2e8f0,
+        
+        success-bg: #10b981,
+        success-fg: #ffffff,
+        warning-bg: #f59e0b,
+        warning-fg: #ffffff,
+        error-bg: #ef4444,
+        error-fg: #ffffff,
+        info-bg: #3b82f6,
+        info-fg: #ffffff,
+        
+        border: #e2e8f0,
+        border-hover: #cbd5e1,
+        
+        shadow: #00000010,
+        shadow-strong: #00000020,
+    };
+}
+
+// 深色主题调色板
+export global DarkPalette {
+    out property <Palette> palette: {
+        window-bg: #0f172a,
+        window-fg: #f8fafc,
+        
+        primary-bg: #3b82f6,
+        primary-fg: #ffffff,
+        primary-hover: #2563eb,
+        
+        surface-bg: #1e293b,
+        surface-fg: #cbd5e1,
+        surface-hover: #334155,
+        
+        layer-1: #1e293b,
+        layer-2: #334155,
+        layer-3: #475569,
+        
+        success-bg: #10b981,
+        success-fg: #ffffff,
+        warning-bg: #f59e0b,
+        warning-fg: #ffffff,
+        error-bg: #ef4444,
+        error-fg: #ffffff,
+        info-bg: #3b82f6,
+        info-fg: #ffffff,
+        
+        border: #334155,
+        border-hover: #475569,
+        
+        shadow: #00000030,
+        shadow-strong: #00000050,
+    };
+}
+
+// 尺寸规范
+export struct Sizes {
+    // 内边距
+    p-xs: length,
+    p-sm: length,
+    p-md: length,
+    p-lg: length,
+    p-xl: length,
+    
+    // 间距
+    s-xs: length,
+    s-sm: length,
+    s-md: length,
+    s-lg: length,
+    s-xl: length,
+    
+    // 圆角
+    r-xs: length,
+    r-sm: length,
+    r-md: length,
+    r-lg: length,
+    r-xl: length,
+    
+    // 高度
+    h-xs: length,
+    h-sm: length,
+    h-md: length,
+    h-lg: length,
+    h-xl: length,
+    
+    // 字体
+    font: length,
+    icon: length,
+    line: length,
+}
+
+// 动画时长
+export struct Durations {
+    short: duration,
+    mid: duration,
+    long: duration,
+}
+
+// 主样式系统 - 统一管理主题和设计token
+export global Styles {
+    // 主题切换
+    in-out property <bool> is-dark-mode: false;
+    
+    // 当前调色板
+    out property <Palette> palette: root.is-dark-mode ? DarkPalette.palette : LightPalette.palette;
+    
+    // 尺寸系统
+    out property <Sizes> sizes: {
+        p-xs: 4px,
+        p-sm: 8px,
+        p-md: 16px,
+        p-lg: 24px,
+        p-xl: 32px,
+        
+        s-xs: 4px,
+        s-sm: 8px,
+        s-md: 16px,
+        s-lg: 24px,
+        s-xl: 32px,
+        
+        r-xs: 4px,
+        r-sm: 6px,
+        r-md: 8px,
+        r-lg: 12px,
+        r-xl: 16px,
+        
+        h-xs: 24px,
+        h-sm: 32px,
+        h-md: 40px,
+        h-lg: 48px,
+        h-xl: 56px,
+        
+        font: 14px,
+        icon: 16px,
+        line: 1px,
+    };
+    
+    // 动画时长
+    out property <Durations> durations: {
+        short: 150ms,
+        mid: 300ms,
+        long: 500ms,
+    };
+    
+    // 字体系统
+    out property <string> font-family: "Microsoft YaHei UI";
+}

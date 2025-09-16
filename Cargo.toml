@@ -1,5 +1,5 @@
 [package]
-name = "ReMnBWarband-Editor"
+name = "remnb_warband_editor"
 version = "0.0.1-beta"
 edition = "2021"
 authors = ["Flacier"]
@@ -8,38 +8,22 @@ license = "MIT"
 repository = "https://github.com/fldicoahkiin/ReMnBWarband-Editor"
 
 [dependencies]
-slint = "1.3"
+# 核心依赖
+anyhow = "1.0"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-sea-orm = { version = "0.12", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
-tokio = { version = "1.0", features = ["full"] }
-pyo3 = { version = "0.20", features = ["auto-initialize"] }
-muda = "0.11"
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "sqlite"] }
-anyhow = "1.0"
-thiserror = "1.0"
-uuid = { version = "1.0", features = ["v4"] }
-chrono = { version = "0.4", features = ["serde"] }
-regex = "1.0"
-encoding_rs = "0.8"
-byteorder = "1.4"
 dirs = "5.0"
+
+# UI框架
+slint = "1.3"
+
+# 文件对话框
 rfd = "0.14"
+
+# Python集成
+pyo3 = { version = "0.21", features = ["auto-initialize"] }
 
 [build-dependencies]
 slint-build = "1.3"
-
-[dev-dependencies]
-tempfile = "3.0"
-
-[[bin]]
-name = "ReMnBWarband-Editor"
-path = "src/main.rs"
-
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
-strip = true

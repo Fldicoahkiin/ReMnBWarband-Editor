@@ -1,0 +1,398 @@
+// 主编辑器页面
+
+import { Colors, Spacing, BorderRadius, Typography } from "../globals/styles.slint";
+import { AppBridge, UiState } from "../globals/bridges.slint";
+import { Button, ButtonVariant, ButtonSize } from "../components/button.slint";
+import { Card } from "../components/card.slint";
+
+export component EditorPage {
+    HorizontalLayout {
+        // 侧边栏
+        sidebar := Rectangle {
+            width: 280px;
+            background: Colors.surface;
+            
+            // 右边框
+            Rectangle {
+                x: parent.width - 1px;
+                width: 1px;
+                height: parent.height;
+                background: Colors.border;
+            }
+            
+            VerticalLayout {
+                padding: Spacing.lg;
+                spacing: Spacing.md;
+                
+                // 剧本选择区域
+                VerticalLayout {
+                    spacing: Spacing.sm;
+                    
+                    Text {
+                        text: "当前剧本";
+                        font-size: Typography.text-sm;
+                        font-weight: Typography.weight-medium;
+                        color: Colors.text-secondary;
+                    }
+                    
+                    Rectangle {
+                        height: 40px;
+                        background: Colors.background;
+                        border-radius: BorderRadius.md;
+                        border-width: 1px;
+                        border-color: Colors.border;
+                        
+                        HorizontalLayout {
+                            padding-left: Spacing.md;
+                            padding-right: Spacing.md;
+                            alignment: space-between;
+                            
+                            Text {
+                                text: AppBridge.current-module;
+                                font-size: Typography.text-base;
+                                color: Colors.text-primary;
+                                vertical-alignment: center;
+                            }
+                            
+                            // 下拉箭头
+                            Path {
+                                width: 16px;
+                                height: 16px;
+                                fill: Colors.text-secondary;
+                                commands: "M 4 6 L 8 10 L 12 6";
+                                stroke: Colors.text-secondary;
+                                stroke-width: 1px;
+                            }
+                        }
+                        
+                        TouchArea {
+                            // 点击展开剧本选择
+                        }
+                    }
+                }
+                
+                // 分隔线
+                Rectangle {
+                    height: 1px;
+                    background: Colors.border;
+                }
+                
+                // 导航菜单
+                VerticalLayout {
+                    spacing: Spacing.xs;
+                    
+                    // 物品编辑
+                    nav-item-items := Rectangle {
+                        height: 36px;
+                        background: UiState.current-tab == 0 ? Colors.primary-light : 
+                                  nav-area-items.has-hover ? Colors.surface-hover : transparent;
+                        border-radius: BorderRadius.md;
+                        
+                        nav-area-items := TouchArea {
+                            clicked => {
+                                UiState.current-tab = 0;
+                            }
+                        }
+                        
+                        HorizontalLayout {
+                            padding-left: Spacing.md;
+                            padding-right: Spacing.md;
+                            alignment: start;
+                            
+                            Text {
+                                text: "物品编辑";
+                                font-size: Typography.text-base;
+                                color: UiState.current-tab == 0 ? Colors.primary : Colors.text-primary;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                    
+                    // 兵种编辑
+                    nav-item-troops := Rectangle {
+                        height: 36px;
+                        background: UiState.current-tab == 1 ? Colors.primary-light : 
+                                  nav-area-troops.has-hover ? Colors.surface-hover : transparent;
+                        border-radius: BorderRadius.md;
+                        
+                        nav-area-troops := TouchArea {
+                            clicked => {
+                                UiState.current-tab = 1;
+                            }
+                        }
+                        
+                        HorizontalLayout {
+                            padding-left: Spacing.md;
+                            padding-right: Spacing.md;
+                            alignment: start;
+                            
+                            Text {
+                                text: "兵种编辑";
+                                font-size: Typography.text-base;
+                                color: UiState.current-tab == 1 ? Colors.primary : Colors.text-primary;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                    
+                    // 派系编辑
+                    nav-item-factions := Rectangle {
+                        height: 36px;
+                        background: UiState.current-tab == 2 ? Colors.primary-light : 
+                                  nav-area-factions.has-hover ? Colors.surface-hover : transparent;
+                        border-radius: BorderRadius.md;
+                        
+                        nav-area-factions := TouchArea {
+                            clicked => {
+                                UiState.current-tab = 2;
+                            }
+                        }
+                        
+                        HorizontalLayout {
+                            padding-left: Spacing.md;
+                            padding-right: Spacing.md;
+                            alignment: start;
+                            
+                            Text {
+                                text: "派系编辑";
+                                font-size: Typography.text-base;
+                                color: UiState.current-tab == 2 ? Colors.primary : Colors.text-primary;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                    
+                    // Python脚本
+                    nav-item-python := Rectangle {
+                        height: 36px;
+                        background: UiState.current-tab == 3 ? Colors.primary-light : 
+                                  nav-area-python.has-hover ? Colors.surface-hover : transparent;
+                        border-radius: BorderRadius.md;
+                        
+                        nav-area-python := TouchArea {
+                            clicked => {
+                                UiState.current-tab = 3;
+                            }
+                        }
+                        
+                        HorizontalLayout {
+                            padding-left: Spacing.md;
+                            padding-right: Spacing.md;
+                            alignment: start;
+                            
+                            Text {
+                                text: "Python脚本";
+                                font-size: Typography.text-base;
+                                color: UiState.current-tab == 3 ? Colors.primary : Colors.text-primary;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+                
+                // 占位符，推送底部按钮到底部
+                Rectangle { }
+                
+                // 底部操作按钮
+                VerticalLayout {
+                    spacing: Spacing.sm;
+                    
+                    Button {
+                        text: "加载数据";
+                        variant: ButtonVariant.primary;
+                        size: ButtonSize.sm;
+                        
+                        clicked => {
+                            AppBridge.load-game-data(AppBridge.game-path, AppBridge.current-module);
+                        }
+                    }
+                    
+                    Button {
+                        text: "保存数据";
+                        variant: ButtonVariant.secondary;
+                        size: ButtonSize.sm;
+                        disabled: !AppBridge.data-loaded;
+                        
+                        clicked => {
+                            AppBridge.save-data();
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 主内容区域
+        main-content := Rectangle {
+            background: Colors.background;
+            
+            VerticalLayout {
+                // 顶部工具栏
+                toolbar := Rectangle {
+                    height: 60px;
+                    background: Colors.surface;
+                    
+                    // 底部边框
+                    Rectangle {
+                        y: parent.height - 1px;
+                        width: parent.width;
+                        height: 1px;
+                        background: Colors.border;
+                    }
+                    
+                    HorizontalLayout {
+                        padding: Spacing.lg;
+                        spacing: Spacing.md;
+                        alignment: space-between;
+                        
+                        // 左侧标题
+                        HorizontalLayout {
+                            alignment: start;
+                            
+                            Text {
+                                text: UiState.current-tab == 0 ? "物品编辑器" :
+                                     UiState.current-tab == 1 ? "兵种编辑器" :
+                                     UiState.current-tab == 2 ? "派系编辑器" : "Python脚本编辑器";
+                                font-size: Typography.text-xl;
+                                font-weight: Typography.weight-semibold;
+                                color: Colors.text-primary;
+                                vertical-alignment: center;
+                            }
+                        }
+                        
+                        // 右侧状态
+                        HorizontalLayout {
+                            spacing: Spacing.md;
+                            alignment: end;
+                            
+                            Rectangle {
+                                width: 8px;
+                                height: 8px;
+                                border-radius: BorderRadius.full;
+                                background: AppBridge.data-loaded ? Colors.success : Colors.error;
+                            }
+                            
+                            Text {
+                                text: AppBridge.status-message;
+                                font-size: Typography.text-sm;
+                                color: Colors.text-secondary;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+                
+                // 内容区域
+                content-area := Rectangle {
+                    background: Colors.background;
+                    
+                    // 根据当前标签页显示不同内容
+                    if UiState.current-tab == 0: Rectangle {
+                        background: Colors.background;
+                        
+                        HorizontalLayout {
+                            padding: Spacing.lg;
+                            spacing: Spacing.lg;
+                            
+                            Card {
+                                width: 300px;
+                                
+                                VerticalLayout {
+                                    spacing: Spacing.md;
+                                    
+                                    Text {
+                                        text: "物品列表";
+                                        font-size: Typography.text-lg;
+                                        font-weight: Typography.weight-medium;
+                                        color: Colors.text-primary;
+                                    }
+                                    
+                                    Text {
+                                        text: "物品编辑功能开发中...";
+                                        color: Colors.text-muted;
+                                    }
+                                }
+                            }
+                            
+                            Card {
+                                Text {
+                                    text: "物品属性编辑区域";
+                                    color: Colors.text-muted;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if UiState.current-tab == 1: Rectangle {
+                        background: Colors.background;
+                        
+                        HorizontalLayout {
+                            padding: Spacing.lg;
+                            spacing: Spacing.lg;
+                            
+                            Card {
+                                width: 300px;
+                                
+                                Text {
+                                    text: "兵种编辑器";
+                                    font-size: Typography.text-lg;
+                                    color: Colors.text-primary;
+                                }
+                            }
+                            
+                            Card {
+                                Text {
+                                    text: "兵种属性编辑区域";
+                                    color: Colors.text-muted;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if UiState.current-tab == 2: Rectangle {
+                        background: Colors.background;
+                        
+                        HorizontalLayout {
+                            padding: Spacing.lg;
+                            spacing: Spacing.lg;
+                            
+                            Card {
+                                width: 300px;
+                                
+                                Text {
+                                    text: "派系编辑器";
+                                    font-size: Typography.text-lg;
+                                    color: Colors.text-primary;
+                                }
+                            }
+                            
+                            Card {
+                                Text {
+                                    text: "派系属性编辑区域";
+                                    color: Colors.text-muted;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if UiState.current-tab == 3: Rectangle {
+                        background: Colors.background;
+                        
+                        VerticalLayout {
+                            padding: Spacing.lg;
+                            
+                            Card {
+                                Text {
+                                    text: "Python脚本编辑器";
+                                    font-size: Typography.text-lg;
+                                    color: Colors.text-primary;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,38 @@
+// 卡片组件
+
+import { Styles } from "../globals/styles.slint";
+
+export component Card {
+    in property <string> title: "";
+    in property <bool> elevated: true;
+    in property <bool> outlined: false;
+    
+    min-width: 200px;
+    min-height: 100px;
+    
+    background := Rectangle {
+        background: Styles.palette.surface-bg;
+        border-radius: Styles.sizes.r-lg;
+        border-width: root.outlined ? Styles.sizes.line : 0px;
+        border-color: Styles.palette.border;
+        
+        drop-shadow-blur: root.elevated ? 8px : 0px;
+        drop-shadow-color: Styles.palette.shadow;
+        drop-shadow-offset-y: root.elevated ? 4px : 0px;
+    }
+    
+    VerticalLayout {
+        padding: Styles.sizes.p-lg;
+        spacing: Styles.sizes.s-md;
+        
+        if root.title != "": Text {
+            text: root.title;
+            color: Styles.palette.surface-fg;
+            font-family: Styles.font-family;
+            font-size: Styles.sizes.font + 2px;
+            font-weight: 600;
+        }
+        
+        @children
+    }
+}

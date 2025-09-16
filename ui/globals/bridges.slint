@@ -1,0 +1,123 @@
+// 全局桥接器定义 - MVVM架构
+
+// 窗口控制桥接器
+export global WindowControlBridge {
+    callback minimize();
+    callback close();
+    callback drag-window();
+    callback toggle-maximize();
+}
+
+// 应用程序桥接器 - 连接Rust后端和Slint UI
+export global AppBridge {
+    // 属性
+    in-out property <string> game-path;
+    in-out property <bool> game-detected;
+    in-out property <bool> game-loaded;
+    in-out property <string> current-page: "startup";
+    in-out property <bool> is-loading;
+    in-out property <string> status-message: "就绪";
+    in-out property <string> error-message;
+    in-out property <string> current-module: "Native";
+    in-out property <bool> data-loaded;
+    
+    // 回调函数
+    callback detect-game();
+    callback browse-game-path();
+    callback enter-editor();
+    callback load-from-game();
+    callback save-to-game();
+}
+
+// 物品编辑器桥接器
+export global ItemBridge {
+    // 数据状态
+    in-out property <int> items-count: 0;
+    in-out property <int> filtered-items-count: 0;
+    in-out property <string> search-query: "";
+    in-out property <string> selected-item-type: "";
+    in-out property <bool> has-selection: false;
+    in-out property <bool> is-editing: false;
+    in-out property <bool> is-loading: false;
+    in-out property <string> status-message: "";
+    
+    // 编辑命令
+    callback load-items();
+    callback search-items(string);
+    callback filter-by-type(string);
+    callback select-item(int);
+    callback add-item();
+    callback edit-item();
+    callback save-item();
+    callback cancel-edit();
+    callback delete-item();
+}
+
+// 兵种编辑器桥接器
+export global TroopBridge {
+    // 数据状态
+    in-out property <int> troops-count: 0;
+    in-out property <int> filtered-troops-count: 0;
+    in-out property <string> search-query: "";
+    in-out property <string> selected-faction: "";
+    in-out property <string> selected-troop-class: "";
+    in-out property <bool> has-selection: false;
+    in-out property <bool> is-editing: false;
+    in-out property <bool> is-loading: false;
+    in-out property <string> status-message: "";
+    
+    // 编辑命令
+    callback load-troops();
+    callback search-troops(string);
+    callback filter-by-faction(string);
+    callback filter-by-class(string);
+    callback select-troop(int);
+    callback add-troop();
+    callback edit-troop();
+    callback save-troop();
+    callback cancel-edit();
+    callback delete-troop();
+}
+
+// 派系编辑器桥接器
+export global FactionBridge {
+    // 数据状态
+    in-out property <int> factions-count: 0;
+    in-out property <int> filtered-factions-count: 0;
+    in-out property <string> search-query: "";
+    in-out property <string> selected-culture: "";
+    in-out property <bool> has-selection: false;
+    in-out property <bool> is-editing: false;
+    in-out property <bool> is-loading: false;
+    in-out property <string> status-message: "";
+    
+    // 编辑命令
+    callback load-factions();
+    callback search-factions(string);
+    callback filter-by-culture(string);
+    callback select-faction(int);
+    callback add-faction();
+    callback edit-faction();
+    callback save-faction();
+    callback cancel-edit();
+    callback delete-faction();
+}
+
+// 设置桥接器
+export global SettingsBridge {
+    callback save-settings();
+    callback load-settings();
+    callback reset-settings();
+    
+    in-out property <string> language: "zh-CN";
+    in-out property <string> theme: "auto";
+    in-out property <bool> auto-save: true;
+}
+
+// UI状态管理
+export global UiState {
+    in-out property <int> current-page: 0; // 0: 启动页, 1: 主编辑器
+    in-out property <int> current-tab: 0;  // 主编辑器中的标签页
+    in-out property <bool> sidebar-visible: true;
+    in-out property <bool> settings-visible: false;
+}

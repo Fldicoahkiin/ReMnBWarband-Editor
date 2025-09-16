@@ -1,0 +1,66 @@
+// 输入框组件
+
+import { Styles } from "../globals/styles.slint";
+
+export component Input {
+    in property <string> placeholder: "";
+    in property <string> label: "";
+    in-out property <string> text <=> input.text;
+    in property <bool> enabled: true;
+    in property <bool> error: false;
+    in property <string> error-message: "";
+    in property <InputType> input-type: InputType.text;
+    
+    callback accepted <=> input.accepted;
+    callback edited <=> input.edited;
+    
+    min-width: 200px;
+    min-height: root.label != "" ? Styles.sizes.h-lg + 20px : Styles.sizes.h-md;
+    
+    VerticalLayout {
+        spacing: Styles.sizes.s-xs;
+        
+        if root.label != "": Text {
+            text: root.label;
+            color: root.error ? Styles.palette.error-bg : Styles.palette.surface-fg;
+            font-family: Styles.font-family;
+            font-size: Styles.sizes.font - 2px;
+            font-weight: 500;
+        }
+        
+        container := Rectangle {
+            height: Styles.sizes.h-md;
+            background: !root.enabled ? Styles.palette.layer-1 : Styles.palette.window-bg;
+            border-radius: Styles.sizes.r-md;
+            border-width: Styles.sizes.line;
+            border-color: root.error ? Styles.palette.error-bg : 
+                         (input.has-focus ? Styles.palette.primary-bg : Styles.palette.border);
+            
+            animate border-color {
+                duration: Styles.durations.short;
+                easing: ease-out;
+            }
+            
+            HorizontalLayout {
+                padding-left: Styles.sizes.p-md;
+                padding-right: Styles.sizes.p-md;
+                
+                input := TextInput {
+                    enabled: root.enabled;
+                    input-type: root.input-type;
+                    color: !root.enabled ? Styles.palette.layer-3 : Styles.palette.window-fg;
+                    font-family: Styles.font-family;
+                    font-size: Styles.sizes.font;
+                    vertical-alignment: center;
+                }
+            }
+        }
+        
+        if root.error && root.error-message != "": Text {
+            text: root.error-message;
+            color: Styles.palette.error-bg;
+            font-family: Styles.font-family;
+            font-size: Styles.sizes.font - 2px;
+        }
+    }
+}

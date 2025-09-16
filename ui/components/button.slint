@@ -1,0 +1,66 @@
+// 按钮组件
+
+import { Styles } from "../globals/styles.slint";
+
+export component Button {
+    in property <string> text: "按钮";
+    in property <bool> primary: false;
+    in property <bool> flat: false;
+    in property <bool> enabled: true;
+    in property <bool> loading: false;
+    
+    callback clicked <=> touch-area.clicked;
+    
+    min-width: 80px;
+    min-height: Styles.sizes.h-md;
+    
+    states [
+        pressed when touch-area.pressed: {
+            background.background: root.primary ? Styles.palette.primary-hover : Styles.palette.surface-hover;
+            root.opacity: 0.8;
+        }
+        hover when touch-area.has-hover && root.enabled: {
+            background.background: root.primary ? Styles.palette.primary-hover : Styles.palette.surface-hover;
+        }
+        disabled when !root.enabled: {
+            root.opacity: 0.5;
+        }
+    ]
+    
+    animate opacity {
+        duration: Styles.durations.short;
+        easing: ease-out;
+    }
+    
+    background := Rectangle {
+        background: root.flat ? transparent : (root.primary ? Styles.palette.primary-bg : Styles.palette.surface-bg);
+        border-radius: Styles.sizes.r-md;
+        border-width: root.flat ? 0px : Styles.sizes.line;
+        border-color: root.primary ? transparent : Styles.palette.border;
+        
+        drop-shadow-blur: root.flat ? 0px : 4px;
+        drop-shadow-color: Styles.palette.shadow;
+        drop-shadow-offset-y: 2px;
+    }
+    
+    touch-area := TouchArea {
+        enabled: root.enabled;
+    }
+    
+    HorizontalLayout {
+        alignment: LayoutAlignment.center;
+        padding-left: Styles.sizes.p-md;
+        padding-right: Styles.sizes.p-md;
+        padding-top: Styles.sizes.p-sm;
+        padding-bottom: Styles.sizes.p-sm;
+        
+        text-element := Text {
+            text: root.text;
+            color: root.primary ? Styles.palette.primary-fg : Styles.palette.surface-fg;
+            font-family: Styles.font-family;
+            font-size: Styles.sizes.font;
+            font-weight: 500;
+            vertical-alignment: center;
+        }
+    }
+}
