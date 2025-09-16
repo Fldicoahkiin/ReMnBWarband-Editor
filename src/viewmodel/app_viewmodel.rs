@@ -1,7 +1,7 @@
 // 应用程序主ViewModel
 
 use std::sync::Arc;
-use crate::data::{GameData, Item, Module};
+use crate::data::{Item, Module};
 use crate::editor::Editor;
 use anyhow::Result;
 use crate::viewmodel::{
@@ -55,25 +55,25 @@ pub struct AppViewModel {
 impl AppViewModel {
     pub fn new(editor: Arc<Editor>) -> Result<Self> {
         let base = BaseViewModelImpl::new();
-        let app_state = Observable::new(AppState::Startup);
-        let game_path = Observable::new(String::new());
-        let is_game_valid = Observable::new(false);
-        let game_detected = Observable::new(false);
-        let is_loading = Observable::new(false);
-        let status_message = Observable::new("就绪".to_string());
-        let error_message = Observable::new(None);
-        let current_page = Observable::new("startup".to_string());
-        let current_module = Observable::new("Native".to_string());
-        let data_loaded = Observable::new(false);
+        let app_state = Observable::with_debounce(AppState::Startup, 50);
+        let game_path = Observable::with_debounce(String::new(), 100);
+        let is_game_valid = Observable::with_debounce(false, 50);
+        let game_detected = Observable::with_debounce(false, 50);
+        let is_loading = Observable::with_debounce(false, 16);
+        let status_message = Observable::with_debounce("就绪".to_string(), 100);
+        let error_message = Observable::with_debounce(None, 100);
+        let current_page = Observable::with_debounce("startup".to_string(), 50);
+        let current_module = Observable::with_debounce("Native".to_string(), 50);
+        let data_loaded = Observable::with_debounce(false, 50);
         
         // 物品编辑器相关
-        let items = Observable::new(Vec::new());
-        let selected_item = Observable::new(None);
-        let selected_item_id = Observable::new(String::new());
+        let items = Observable::with_debounce(Vec::new(), 100);
+        let selected_item = Observable::with_debounce(None, 50);
+        let selected_item_id = Observable::with_debounce(String::new(), 50);
         
         // 模块相关
-        let modules = Observable::new(Vec::new());
-        let selected_module = Observable::new("Native".to_string());
+        let modules = Observable::with_debounce(Vec::new(), 100);
+        let selected_module = Observable::with_debounce("Native".to_string(), 50);
 
         // 检测游戏命令
         let editor_clone = Arc::clone(&editor);
@@ -367,33 +367,38 @@ impl AppViewModel {
     pub fn select_item(&self, item_id: String) {
         self.selected_item_id.set(item_id.clone());
         
-        // 在物品列表中查找对应的物品
-        let items = self.items.get();
-        if let Some(item) = items.iter().find(|item| item.id == item_id) {
-            self.selected_item.set(Some(item.clone()));
-        }
+        // 使用with_value避免克隆整个items列表
+        self.items.with_value(|items| {
+            if let Some(item) = items.iter().find(|item| item.id == item_id) {
+                self.selected_item.set(Some(item.clone()));
+            }
+        });
     }
 
     // 保存物品修改
     pub fn save_item(&self, id: String, name: String, item_type: String, price: f32, weight: f32, damage: f32, armor: f32) -> Result<()> {
-        let mut items = self.items.get();
+        let updated_item = Item {
+            id: id.clone(),
+            name,
+            item_type,
+            price: price as i32,
+            weight,
+            damage: damage as i32,
+            armor: armor as i32,
+        };
         
-        if let Some(item) = items.iter_mut().find(|item| item.id == id) {
-            let updated_item = Item {
-                id: item.id.clone(),
-                name,
-                item_type,
-                price: price as i32,
-                weight,
-                damage: damage as i32,
-                armor: armor as i32,
-            };
-            
-            *item = updated_item.clone();
-            self.items.set(items);
+        // 使用update方法避免完整克隆
+        let mut found = false;
+        self.items.update(|items| {
+            if let Some(item) = items.iter_mut().find(|item| item.id == id) {
+                *item = updated_item.clone();
+                found = true;
+            }
+        });
+        
+        if found {
             self.selected_item.set(Some(updated_item));
             self.status_message.set("物品修改已保存".to_string());
-            
             Ok(())
         } else {
             Err(anyhow::anyhow!("未找到指定的物品"))
@@ -448,12 +453,13 @@ impl AppViewModel {
         Ok(())
     }
 
-    // 获取物品列表（用于UI显示）
+    // 获取物品列表
     pub fn get_items_for_ui(&self) -> Vec<(String, String)> {
-        self.items.get()
-            .iter()
-            .map(|item| (item.id.clone(), item.name.clone()))
-            .collect()
+        self.items.with_value(|items| {
+            items.iter()
+                .map(|item| (item.id.clone(), item.name.clone()))
+                .collect()
+        })
     }
 
     // 保存到游戏

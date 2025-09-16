@@ -3,10 +3,74 @@
 use slint::ComponentHandle;
 use std::sync::Arc;
 use anyhow::Result;
+use std::time::{Duration, Instant};
+use std::collections::HashMap;
+use tokio::sync::RwLock;
 
 use crate::viewmodel::app_viewmodel::AppViewModel;
 
 slint::include_modules!();
+
+// UI状态批量更新管理器
+struct UiBatchUpdater {
+    pending_updates: Arc<RwLock<HashMap<String, Box<dyn Fn() + Send + Sync>>>>,
+    last_update: Arc<RwLock<Instant>>,
+}
+
+impl UiBatchUpdater {
+    fn new() -> Self {
+        Self {
+            pending_updates: Arc::new(RwLock::new(HashMap::new())),
+            last_update: Arc::new(RwLock::new(Instant::now())),
+        }
+    }
+    
+    async fn schedule_update<F>(&self, key: String, update_fn: F)
+    where
+        F: Fn() + Send + Sync + 'static,
+    {
+        {
+            let mut updates = self.pending_updates.write().await;
+            updates.insert(key, Box::new(update_fn));
+        }
+        
+        // 防抖处理
+        {
+            let mut last_update = self.last_update.write().await;
+            *last_update = Instant::now();
+        }
+        
+        // 延迟执行批量更新
+        let pending_updates = Arc::clone(&self.pending_updates);
+        let last_update = Arc::clone(&self.last_update);
+        let debounce_duration = self.debounce_duration;
+        
+        tokio::spawn(async move {
+            tokio::time::sleep(debounce_duration).await;
+            
+            // 检查是否有更新的更新请求
+            let current_time = Instant::now();
+            let last_time = *last_update.read().await;
+            
+            if current_time.duration_since(last_time) >= debounce_duration {
+                // 执行所有待处理的更新
+                let updates = {
+                    let mut pending = pending_updates.write().await;
+                    let current_updates: HashMap<String, Box<dyn Fn() + Send + Sync>> = pending.drain().collect();
+                    current_updates
+                };
+                
+                for (_, update_fn) in updates {
+                    update_fn();
+                }
+            }
+        });
+    }
+    
+    async fn start(&self, main_window: &MainWindow) {
+        // ...
+    }
+}
 
 // 启动UI界面
 pub fn start_ui(app_viewmodel: Arc<AppViewModel>) -> Result<()> {
@@ -91,7 +155,7 @@ fn setup_app_callbacks(main_window: &MainWindow, app_viewmodel: &Arc<AppViewMode
     app_bridge.on_redetect_game({
         let app_vm = Arc::clone(&app_viewmodel);
         move || {
-            app_vm.redetect_game_command.execute();
+            let _ = app_vm.redetect_game_command.execute();
         }
     });
 
@@ -254,69 +318,144 @@ fn setup_window_callbacks(_main_window: &MainWindow) -> Result<()> {
 fn setup_state_subscriptions(main_window: &MainWindow, app_viewmodel: &Arc<AppViewModel>) -> Result<()> {
     let window_weak = main_window.as_weak();
     let app_vm = Arc::clone(app_viewmodel);
+    // 创建批量更新管理器
+    let batch_updater = Arc::new(UiBatchUpdater::new(Duration::from_millis(50)));
+    batch_updater.start(main_window.as_weak());
     
     // 订阅游戏路径变化
     app_vm.game_path.subscribe({
         let window_weak = window_weak.clone();
+        let batch_updater = Arc::clone(&batch_updater);
         move |path| {
-            if let Some(window) = window_weak.upgrade() {
-                window.global::<AppBridge>().set_game_path(path.clone().into());
-            }
+            let window_weak = window_weak.clone();
+            let path = path.clone();
+            let batch_updater = Arc::clone(&batch_updater);
+            
+            tokio::spawn(async move {
+                batch_updater.schedule_update(
+                    "game_path".to_string(),
+                    move || {
+                        if let Some(window) = window_weak.upgrade() {
+                            window.global::<AppBridge>().set_game_path(path.clone().into());
+                        }
+                    }
+                ).await;
+            });
         }
     });
     
     // 订阅游戏检测状态变化
     app_vm.game_detected.subscribe({
         let window_weak = window_weak.clone();
+        let batch_updater = Arc::clone(&batch_updater);
         move |detected| {
-            if let Some(window) = window_weak.upgrade() {
-                window.global::<AppBridge>().set_game_detected(*detected);
-            }
+            let window_weak = window_weak.clone();
+            let detected = *detected;
+            let batch_updater = Arc::clone(&batch_updater);
+            
+            tokio::spawn(async move {
+                batch_updater.schedule_update(
+                    "game_detected".to_string(),
+                    move || {
+                        if let Some(window) = window_weak.upgrade() {
+                            window.global::<AppBridge>().set_game_detected(detected);
+                        }
+                    }
+                ).await;
+            });
         }
     });
     
     // 订阅加载状态变化
     app_vm.is_loading.subscribe({
         let window_weak = window_weak.clone();
+        let batch_updater = Arc::clone(&batch_updater);
         move |loading| {
-            if let Some(window) = window_weak.upgrade() {
-                window.global::<AppBridge>().set_is_loading(*loading);
-            }
+            let window_weak = window_weak.clone();
+            let loading = *loading;
+            let batch_updater = Arc::clone(&batch_updater);
+            
+            tokio::spawn(async move {
+                batch_updater.schedule_update(
+                    "is_loading".to_string(),
+                    move || {
+                        if let Some(window) = window_weak.upgrade() {
+                            window.global::<AppBridge>().set_is_loading(loading);
+                        }
+                    }
+                ).await;
+            });
         }
     });
     
     // 订阅状态消息变化
     app_vm.status_message.subscribe({
         let window_weak = window_weak.clone();
+        let batch_updater = Arc::clone(&batch_updater);
         move |message| {
-            if let Some(window) = window_weak.upgrade() {
-                window.global::<AppBridge>().set_status_message(message.clone().into());
-            }
+            let window_weak = window_weak.clone();
+            let message = message.clone();
+            let batch_updater = Arc::clone(&batch_updater);
+            
+            tokio::spawn(async move {
+                batch_updater.schedule_update(
+                    "status_message".to_string(),
+                    move || {
+                        if let Some(window) = window_weak.upgrade() {
+                            window.global::<AppBridge>().set_status_message(message.clone().into());
+                        }
+                    }
+                ).await;
+            });
         }
     });
     
     // 订阅错误消息变化
     app_vm.error_message.subscribe({
         let window_weak = window_weak.clone();
+        let batch_updater = Arc::clone(&batch_updater);
         move |error| {
-            if let Some(window) = window_weak.upgrade() {
-                let error_text = error.as_ref().unwrap_or(&String::new()).clone();
-                window.global::<AppBridge>().set_error_message(error_text.into());
-            }
+            let window_weak = window_weak.clone();
+            let error_text = error.as_ref().unwrap_or(&String::new()).clone();
+            let batch_updater = Arc::clone(&batch_updater);
+            
+            tokio::spawn(async move {
+                batch_updater.schedule_update(
+                    "error_message".to_string(),
+                    move || {
+                        if let Some(window) = window_weak.upgrade() {
+                            window.global::<AppBridge>().set_error_message(error_text.clone().into());
+                        }
+                    }
+                ).await;
+            });
         }
     });
     
     // 订阅物品列表变化
     app_viewmodel.items.subscribe({
         let window_weak = main_window.as_weak();
+        let batch_updater = Arc::clone(&batch_updater);
         move |items| {
-            if let Some(window) = window_weak.upgrade() {
-                let ui_items: Vec<slint::StandardListViewItem> = items
-                    .iter()
-                    .map(|item| slint::StandardListViewItem::from(slint::SharedString::from(item.id.clone())))
-                    .collect();
-                window.global::<AppBridge>().set_items(slint::ModelRc::new(slint::VecModel::from(ui_items)));
-            }
+            let window_weak = window_weak.clone();
+            let items = items.clone();
+            let batch_updater = Arc::clone(&batch_updater);
+            
+            tokio::spawn(async move {
+                batch_updater.schedule_update(
+                    "items_list".to_string(),
+                    move || {
+                        if let Some(window) = window_weak.upgrade() {
+                            // 只在必要时重建UI列表
+                            let ui_items: Vec<slint::StandardListViewItem> = items
+                                .iter()
+                                .map(|item| slint::StandardListViewItem::from(slint::SharedString::from(item.id.clone())))
+                                .collect();
+                            window.global::<AppBridge>().set_items(slint::ModelRc::new(slint::VecModel::from(ui_items)));
+                        }
+                    }
+                ).await;
+            });
         }
     });
 
@@ -372,16 +511,28 @@ fn setup_state_subscriptions(main_window: &MainWindow, app_viewmodel: &Arc<AppVi
     // 订阅当前页面变化
     app_vm.current_page.subscribe({
         let window_weak = window_weak.clone();
+        let batch_updater = Arc::clone(&batch_updater);
         move |page| {
-            if let Some(window) = window_weak.upgrade() {
-                window.global::<AppBridge>().set_current_module(page.clone().into());
-                let page_index = match page.as_str() {
-                    "startup" => 0,
-                    "editor" => 1,
-                    _ => 0,
-                };
-                window.global::<UiState>().set_current_page(page_index);
-            }
+            let window_weak = window_weak.clone();
+            let page = page.clone();
+            let batch_updater = Arc::clone(&batch_updater);
+            
+            tokio::spawn(async move {
+                batch_updater.schedule_update(
+                    "current_page".to_string(),
+                    move || {
+                        if let Some(window) = window_weak.upgrade() {
+                            window.global::<AppBridge>().set_current_module(page.clone().into());
+                            let page_index = match page.as_str() {
+                                "startup" => 0,
+                                "editor" => 1,
+                                _ => 0,
+                            };
+                            window.global::<UiState>().set_current_page(page_index);
+                        }
+                    }
+                ).await;
+            });
         }
     });
     

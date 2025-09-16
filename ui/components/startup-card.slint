@@ -21,26 +21,13 @@ export component StartupCard inherits Rectangle {
     height: 100%;
     background: Styles.background;
     
-    // 滑动动画属性
-    property <length> slide-offset-x: self.visible ? 0px : 600px;
-    property <float> card-opacity: self.visible ? 1.0 : 0.0;
+    // 动画属性
     property <bool> dropdown-open: false;
-    
-    animate slide-offset-x { 
-        duration: 200ms; 
-        easing: ease-in-out; 
-    }
-    animate card-opacity { 
-        duration: 150ms; 
-        easing: ease-in-out; 
-    }
     
     // 全窗口卡片容器
     Rectangle {
         width: 100%;
         height: 100%;
-        x: slide-offset-x;
-        opacity: card-opacity;
         background: Styles.surface;
         
         VerticalLayout {
@@ -106,16 +93,11 @@ export component StartupCard inherits Rectangle {
                         width: 36px;
                         height: 36px;
                         border-radius: 8px;
-                        background: collapse-touch.has-hover ? Styles.surface-container-high : Styles.surface-container;
+                        background: Styles.surface-container;
                         border-width: 1px;
-                        border-color: collapse-touch.has-hover ? Styles.outline : Styles.outline-variant;
-                        drop-shadow-blur: collapse-touch.has-hover ? 4px : 2px;
+                        border-color: Styles.outline-variant;
+                        drop-shadow-blur: 2px;
                         drop-shadow-color: #00000015;
-                        
-                        animate background, border-color, drop-shadow-blur {
-                            duration: 150ms;
-                            easing: ease-out;
-                        }
                         
                         collapse-touch := TouchArea {
                             clicked => {
@@ -198,13 +180,6 @@ export component StartupCard inherits Rectangle {
                                 border-color: Styles.outline;
                                 height: 48px;
                                 
-                                property <bool> is-focused: false;
-                                
-                                animate border-color {
-                                    duration: 150ms;
-                                    easing: ease;
-                                }
-                                
                                 HorizontalLayout {
                                     padding-left: 16px;
                                     padding-right: 16px;
@@ -258,16 +233,7 @@ export component StartupCard inherits Rectangle {
                                 height: 40px;
                                 enabled: !AppBridge.is-loading;
                                 
-                                property <angle> icon-rotation: 0deg;
-                                
-                                animate icon-rotation {
-                                    duration: 1000ms;
-                                    easing: linear;
-                                    iteration-count: AppBridge.is-loading ? -1 : 0;
-                                }
-                                
                                 clicked => {
-                                    self.icon-rotation = self.icon-rotation + 360deg;
                                     AppBridge.redetect-game();
                                 }
                             }
@@ -305,13 +271,7 @@ export component StartupCard inherits Rectangle {
                                 background: Styles.surface;
                                 border-radius: 8px;
                                 border-width: 1px;
-                                border-color: module-dropdown.has-hover ? Styles.primary : Styles.outline;
-                                
-                                
-                                animate border-color {
-                                    duration: 150ms;
-                                    easing: ease;
-                                }
+                                border-color: Styles.outline;
 
                                 module-dropdown := TouchArea {
                                     clicked => {
@@ -376,7 +336,7 @@ export component StartupCard inherits Rectangle {
                                         
                                         for module[index] in AppBridge.modules : Rectangle {
                                             height: 32px;
-                                            background: module-touch.has-hover ? Styles.primary.with-alpha(0.1) : transparent;
+                                            background: transparent;
                                             border-radius: 4px;
                                             
                                             module-touch := TouchArea {
