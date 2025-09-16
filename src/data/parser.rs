@@ -20,9 +20,10 @@ impl Parser {
         let factions = self.parse_factions(game_path.join("Modules/Native/factions.txt"))?;
         
         Ok(GameData {
-            items,
-            troops,
-            factions,
+            items: Vec::new(),
+            troops: Vec::new(),
+            factions: Vec::new(),
+            modules: Vec::new(),
         })
     }
     

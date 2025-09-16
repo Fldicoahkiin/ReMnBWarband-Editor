@@ -4,8 +4,8 @@ import { Styles } from "../globals/styles.slint";
 
 export component Button {
     in property <string> text: "按钮";
-    in property <bool> primary: false;
-    in property <bool> flat: false;
+    in property <image> icon;
+    in property <string> style: "filled"; // "filled", "outlined", "text", "icon"
     in property <bool> enabled: true;
     in property <bool> loading: false;
     
@@ -14,33 +14,77 @@ export component Button {
     min-width: 80px;
     min-height: Styles.sizes.h-md;
     
+    property <float> scale: 1.0;
+    property <float> button-opacity: root.enabled ? 1.0 : 0.5;
+    
     states [
         pressed when touch-area.pressed: {
-            background.background: root.primary ? Styles.palette.primary-hover : Styles.palette.surface-hover;
-            root.opacity: 0.8;
+            scale: 0.95;
+            button-opacity: 0.8;
         }
         hover when touch-area.has-hover && root.enabled: {
-            background.background: root.primary ? Styles.palette.primary-hover : Styles.palette.surface-hover;
+            scale: 1.02;
+            background.background: get-hover-color();
         }
         disabled when !root.enabled: {
-            root.opacity: 0.5;
+            button-opacity: 0.5;
         }
     ]
     
-    animate opacity {
-        duration: Styles.durations.short;
+    animate scale {
+        duration: 150ms;
+        easing: ease-out;
+    }
+    animate button-opacity {
+        duration: 200ms;
         easing: ease-out;
     }
     
+    function get-background-color() -> color {
+        if (root.style == "filled") {
+            return Styles.primary;
+        } else if (root.style == "outlined") {
+            return transparent;
+        } else if (root.style == "text") {
+            return transparent;
+        } else if (root.style == "icon") {
+            return transparent;
+        }
+        return Styles.primary;
+    }
+    
+    function get-hover-color() -> color {
+        if (root.style == "filled") {
+            return Styles.primary-hover;
+        } else {
+            return Styles.primary.with-alpha(0.1);
+        }
+    }
+    
+    function get-text-color() -> color {
+        if (root.style == "filled") {
+            return Styles.text-on-primary;
+        } else {
+            return Styles.primary;
+        }
+    }
+    
     background := Rectangle {
-        background: root.flat ? transparent : (root.primary ? Styles.palette.primary-bg : Styles.palette.surface-bg);
-        border-radius: Styles.sizes.r-md;
-        border-width: root.flat ? 0px : Styles.sizes.line;
-        border-color: root.primary ? transparent : Styles.palette.border;
+        background: get-background-color();
+        border-radius: root.style == "icon" ? self.width / 2 : Styles.sizes.r-md;
+        border-width: root.style == "outlined" ? 1px : 0px;
+        border-color: Styles.outline;
+        opacity: button-opacity;
         
-        drop-shadow-blur: root.flat ? 0px : 4px;
-        drop-shadow-color: Styles.palette.shadow;
+        drop-shadow-blur: root.style == "filled" ? 4px : 0px;
+        drop-shadow-color: Styles.scrim.with-alpha(0.15);
         drop-shadow-offset-y: 2px;
+        
+        // 缩放变换
+        width: parent.width * scale;
+        height: parent.height * scale;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
     }
     
     touch-area := TouchArea {
@@ -53,14 +97,24 @@ export component Button {
         padding-right: Styles.sizes.p-md;
         padding-top: Styles.sizes.p-sm;
         padding-bottom: Styles.sizes.p-sm;
+        spacing: 8px;
         
-        text-element := Text {
+        if root.icon.width > 0: Image {
+            source: root.icon;
+            width: 16px;
+            height: 16px;
+            colorize: get-text-color();
+        }
+        
+        if root.text != "": text-element := Text {
             text: root.text;
-            color: root.primary ? Styles.palette.primary-fg : Styles.palette.surface-fg;
+            color: get-text-color();
             font-family: Styles.font-family;
             font-size: Styles.sizes.font;
             font-weight: 500;
             vertical-alignment: center;
+            horizontal-alignment: center;
+            opacity: 1.0;
         }
     }
 }

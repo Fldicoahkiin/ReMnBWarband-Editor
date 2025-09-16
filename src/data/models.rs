@@ -47,8 +47,17 @@ pub struct Faction {
 
 // 游戏数据集合
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Module {
+    pub id: String,
+    pub name: String,
+    pub path: String,
+    pub is_native: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameData {
     pub items: Vec<Item>,
     pub troops: Vec<Troop>,
     pub factions: Vec<Faction>,
+    pub modules: Vec<Module>,
 }

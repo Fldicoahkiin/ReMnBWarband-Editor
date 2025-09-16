@@ -1,0 +1,529 @@
+// 物品编辑器组件
+import { Styles } from "../globals/styles.slint";
+import { AppBridge } from "../globals/bridges.slint";
+import { Button } from "./button.slint";
+import { Card } from "./card.slint";
+
+export component ItemEditor inherits Rectangle {
+    in property <[StandardListViewItem]> items: [];
+    in property <bool> loading: AppBridge.is-loading;
+    in property <string> selected-item-id: "";
+    in property <string> selected-item-name: "";
+    in property <string> selected-item-type: "";
+    in property <int> selected-item-price: 0;
+    in property <float> selected-item-weight: 0.0;
+    in property <int> selected-item-damage: 0;
+    in property <int> selected-item-armor: 0;
+    
+    callback item-selected(string);
+    callback load-items();
+    callback save-item(string, string, string, int, float, int, int);
+    
+    width: 100%;
+    height: 100%;
+    background: Styles.surface;
+    
+    HorizontalLayout {
+        spacing: 16px;
+        padding: 16px;
+        
+        // 左侧：物品列表
+        Rectangle {
+            width: 300px;
+            background: Styles.surface-container;
+            border-radius: 12px;
+            border-width: 1px;
+            border-color: Styles.outline-variant;
+            
+            VerticalLayout {
+                padding: 16px;
+                spacing: 12px;
+                
+                // 标题和加载按钮
+                HorizontalLayout {
+                    alignment: space-between;
+                    
+                    Text {
+                        text: "物品列表";
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: Styles.text-primary;
+                        font-family: Styles.font-family;
+                        vertical-alignment: center;
+                    }
+                    
+                    Button {
+                        text: loading ? "加载中..." : "加载数据";
+                        style: "outlined";
+                        enabled: !loading;
+                        
+                        clicked => {
+                            root.load-items();
+                        }
+                    }
+                }
+                
+                // 物品列表
+                Rectangle {
+                    background: Styles.surface;
+                    border-radius: 8px;
+                    border-width: 1px;
+                    border-color: Styles.outline;
+                    
+                    if items.length == 0 && !loading : VerticalLayout {
+                        padding: 32px;
+                        alignment: center;
+                        
+                        Text {
+                            text: "暂无物品数据";
+                            font-size: 14px;
+                            color: Styles.text-secondary;
+                            font-family: Styles.font-family;
+                            horizontal-alignment: center;
+                        }
+                        
+                        Text {
+                            text: "点击加载数据按钮从游戏文件中加载";
+                            font-size: 12px;
+                            color: Styles.text-tertiary;
+                            font-family: Styles.font-family;
+                            horizontal-alignment: center;
+                        }
+                    }
+                    
+                    if loading : VerticalLayout {
+                        padding: 32px;
+                        alignment: center;
+                        
+                        Text {
+                            text: "正在加载物品数据...";
+                            font-size: 14px;
+                            color: Styles.text-secondary;
+                            font-family: Styles.font-family;
+                            horizontal-alignment: center;
+                        }
+                    }
+                    
+                    if items.length > 0 : VerticalLayout {
+                        spacing: 4px;
+                        padding: 8px;
+                        
+                        for item[index] in items : Rectangle {
+                            height: 48px;
+                            background: selected-item-id == item.text ? Styles.primary-container : transparent;
+                            border-radius: 8px;
+                            
+                            states [
+                                hover when item-touch.has-hover: {
+                                    background: selected-item-id == item.text ? Styles.primary-container : Styles.surface-container-high;
+                                }
+                            ]
+                            
+                            animate background {
+                                duration: 120ms;
+                                easing: ease;
+                            }
+                            
+                            item-touch := TouchArea {
+                                clicked => {
+                                    root.item-selected(item.text);
+                                }
+                            }
+                            
+                            HorizontalLayout {
+                                padding: 12px;
+                                alignment: start;
+                                spacing: 8px;
+                                
+                                Text {
+                                    text: item.text;
+                                    color: selected-item-id == item.text ? Styles.text-on-primary : Styles.text-primary;
+                                    font-size: 14px;
+                                    font-weight: selected-item-id == item.text ? 500 : 400;
+                                    font-family: Styles.font-family;
+                                    vertical-alignment: center;
+                                    overflow: elide;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 右侧：物品详情编辑
+        Rectangle {
+            background: Styles.surface-container;
+            border-radius: 12px;
+            border-width: 1px;
+            border-color: Styles.outline-variant;
+            
+            if selected-item-id == "" : VerticalLayout {
+                padding: 32px;
+                alignment: center;
+                
+                Text {
+                    text: "选择一个物品开始编辑";
+                    font-size: 18px;
+                    font-weight: 500;
+                    color: Styles.text-secondary;
+                    font-family: Styles.font-family;
+                    horizontal-alignment: center;
+                }
+                
+                Text {
+                    text: "从左侧列表中选择要编辑的物品";
+                    font-size: 14px;
+                    color: Styles.text-tertiary;
+                    font-family: Styles.font-family;
+                    horizontal-alignment: center;
+                }
+            }
+            
+            if selected-item-id != "" : VerticalLayout {
+                padding: 24px;
+                spacing: 20px;
+                
+                // 标题
+                Text {
+                    text: "物品编辑";
+                    font-size: 20px;
+                    font-weight: 600;
+                    color: Styles.text-primary;
+                    font-family: Styles.font-family;
+                }
+                
+                // 编辑表单
+                VerticalLayout {
+                    spacing: 16px;
+                    
+                    // 物品ID（只读）
+                    VerticalLayout {
+                        spacing: 4px;
+                        
+                        Text {
+                            text: "物品ID";
+                            font-size: 12px;
+                            font-weight: 500;
+                            color: Styles.text-secondary;
+                            font-family: Styles.font-family;
+                        }
+                        
+                        Rectangle {
+                            height: 40px;
+                            background: Styles.surface-container-high;
+                            border-radius: 8px;
+                            border-width: 1px;
+                            border-color: Styles.outline;
+                            
+                            HorizontalLayout {
+                                padding: 12px;
+                                
+                                Text {
+                                    text: selected-item-id;
+                                    font-size: 14px;
+                                    color: Styles.text-tertiary;
+                                    font-family: Styles.font-family;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 物品名称
+                    VerticalLayout {
+                        spacing: 4px;
+                        
+                        Text {
+                            text: "物品名称";
+                            font-size: 12px;
+                            font-weight: 500;
+                            color: Styles.text-secondary;
+                            font-family: Styles.font-family;
+                        }
+                        
+                        Rectangle {
+                            height: 40px;
+                            background: Styles.surface;
+                            border-radius: 8px;
+                            border-width: 1px;
+                            border-color: Styles.outline;
+                            
+                            states [
+                                focused when name-input.has-focus: {
+                                    border-color: Styles.primary;
+                                }
+                            ]
+                            
+                            animate border-color {
+                                duration: 150ms;
+                                easing: ease;
+                            }
+                            
+                            name-input := TextInput {
+                                x: 12px;
+                                width: parent.width - 24px;
+                                height: parent.height;
+                                text: selected-item-name;
+                                font-size: 14px;
+                                color: Styles.text-primary;
+                                font-family: Styles.font-family;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                    
+                    // 物品类型
+                    VerticalLayout {
+                        spacing: 4px;
+                        
+                        Text {
+                            text: "物品类型";
+                            font-size: 12px;
+                            font-weight: 500;
+                            color: Styles.text-secondary;
+                            font-family: Styles.font-family;
+                        }
+                        
+                        Rectangle {
+                            height: 40px;
+                            background: Styles.surface;
+                            border-radius: 8px;
+                            border-width: 1px;
+                            border-color: Styles.outline;
+                            
+                            states [
+                                focused when type-input.has-focus: {
+                                    border-color: Styles.primary;
+                                }
+                            ]
+                            
+                            animate border-color {
+                                duration: 150ms;
+                                easing: ease;
+                            }
+                            
+                            type-input := TextInput {
+                                x: 12px;
+                                width: parent.width - 24px;
+                                height: parent.height;
+                                text: selected-item-type;
+                                font-size: 14px;
+                                color: Styles.text-primary;
+                                font-family: Styles.font-family;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                    
+                    // 数值属性行
+                    HorizontalLayout {
+                        spacing: 12px;
+                        
+                        // 价格
+                        VerticalLayout {
+                            spacing: 4px;
+                            
+                            Text {
+                                text: "价格";
+                                font-size: 12px;
+                                font-weight: 500;
+                                color: Styles.text-secondary;
+                                font-family: Styles.font-family;
+                            }
+                            
+                            Rectangle {
+                                height: 40px;
+                                background: Styles.surface;
+                                border-radius: 8px;
+                                border-width: 1px;
+                                border-color: Styles.outline;
+                                
+                                states [
+                                    focused when price-input.has-focus: {
+                                        border-color: Styles.primary;
+                                    }
+                                ]
+                                
+                                animate border-color {
+                                    duration: 150ms;
+                                    easing: ease;
+                                }
+                                
+                                price-input := TextInput {
+                                    x: 12px;
+                                    width: parent.width - 24px;
+                                    height: parent.height;
+                                    text: selected-item-price;
+                                    font-size: 14px;
+                                    color: Styles.text-primary;
+                                    font-family: Styles.font-family;
+                                    vertical-alignment: center;
+                                    input-type: number;
+                                }
+                            }
+                        }
+                        
+                        // 重量
+                        VerticalLayout {
+                            spacing: 4px;
+                            
+                            Text {
+                                text: "重量";
+                                font-size: 12px;
+                                font-weight: 500;
+                                color: Styles.text-secondary;
+                                font-family: Styles.font-family;
+                            }
+                            
+                            Rectangle {
+                                height: 40px;
+                                background: Styles.surface;
+                                border-radius: 8px;
+                                border-width: 1px;
+                                border-color: Styles.outline;
+                                
+                                states [
+                                    focused when weight-input.has-focus: {
+                                        border-color: Styles.primary;
+                                    }
+                                ]
+                                
+                                animate border-color {
+                                    duration: 150ms;
+                                    easing: ease;
+                                }
+                                
+                                weight-input := TextInput {
+                                    x: 12px;
+                                    width: parent.width - 24px;
+                                    height: parent.height;
+                                    text: selected-item-weight;
+                                    font-size: 14px;
+                                    color: Styles.text-primary;
+                                    font-family: Styles.font-family;
+                                    vertical-alignment: center;
+                                    input-type: decimal;
+                                }
+                            }
+                        }
+                    }
+                    
+                    HorizontalLayout {
+                        spacing: 12px;
+                        
+                        // 伤害
+                        VerticalLayout {
+                            spacing: 4px;
+                            
+                            Text {
+                                text: "伤害";
+                                font-size: 12px;
+                                font-weight: 500;
+                                color: Styles.text-secondary;
+                                font-family: Styles.font-family;
+                            }
+                            
+                            Rectangle {
+                                height: 40px;
+                                background: Styles.surface;
+                                border-radius: 8px;
+                                border-width: 1px;
+                                border-color: Styles.outline;
+                                
+                                states [
+                                    focused when damage-input.has-focus: {
+                                        border-color: Styles.primary;
+                                    }
+                                ]
+                                
+                                animate border-color {
+                                    duration: 150ms;
+                                    easing: ease;
+                                }
+                                
+                                damage-input := TextInput {
+                                    x: 12px;
+                                    width: parent.width - 24px;
+                                    height: parent.height;
+                                    text: selected-item-damage;
+                                    font-size: 14px;
+                                    color: Styles.text-primary;
+                                    font-family: Styles.font-family;
+                                    vertical-alignment: center;
+                                    input-type: number;
+                                }
+                            }
+                        }
+                        
+                        // 护甲
+                        VerticalLayout {
+                            spacing: 4px;
+                            
+                            Text {
+                                text: "护甲";
+                                font-size: 12px;
+                                font-weight: 500;
+                                color: Styles.text-secondary;
+                                font-family: Styles.font-family;
+                            }
+                            
+                            Rectangle {
+                                height: 40px;
+                                background: Styles.surface;
+                                border-radius: 8px;
+                                border-width: 1px;
+                                border-color: Styles.outline;
+                                
+                                states [
+                                    focused when armor-input.has-focus: {
+                                        border-color: Styles.primary;
+                                    }
+                                ]
+                                
+                                animate border-color {
+                                    duration: 150ms;
+                                    easing: ease;
+                                }
+                                
+                                armor-input := TextInput {
+                                    x: 12px;
+                                    width: parent.width - 24px;
+                                    height: parent.height;
+                                    text: selected-item-armor;
+                                    font-size: 14px;
+                                    color: Styles.text-primary;
+                                    font-family: Styles.font-family;
+                                    vertical-alignment: center;
+                                    input-type: number;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // 保存按钮
+                HorizontalLayout {
+                    alignment: end;
+                    
+                    Button {
+                        text: "保存修改";
+                        style: "filled";
+                        
+                        clicked => {
+                            root.save-item(
+                                selected-item-id,
+                                name-input.text,
+                                type-input.text,
+                                price-input.text.to-float(),
+                                weight-input.text.to-float(),
+                                damage-input.text.to-float(),
+                                armor-input.text.to-float()
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

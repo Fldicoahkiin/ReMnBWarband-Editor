@@ -1,0 +1,426 @@
+// 启动卡片组件 - 游戏路径和剧本选择
+
+import { Styles } from "../globals/styles.slint";
+import { AppBridge } from "../globals/bridges.slint";
+import { Button } from "./button.slint";
+
+export component StartupCard inherits Rectangle {
+    in property <string> game-path: AppBridge.game-path;
+    in property <bool> game-detected: AppBridge.game-detected;
+    in property <string> status-message: AppBridge.status-message;
+    in property <string> error-message: AppBridge.error-message;
+    
+    // 回调
+    callback collapse();
+    callback detect-game();
+    callback browse-game-path();
+    callback enter-editor();
+    
+    // 全窗口滑动卡片样式
+    width: 100%;
+    height: 100%;
+    background: Styles.background;
+    
+    // 滑动动画属性
+    property <length> slide-offset-x: self.visible ? 0px : 600px;
+    property <float> card-opacity: self.visible ? 1.0 : 0.0;
+    property <bool> dropdown-open: false;
+    
+    animate slide-offset-x { 
+        duration: 200ms; 
+        easing: ease-in-out; 
+    }
+    animate card-opacity { 
+        duration: 150ms; 
+        easing: ease-in-out; 
+    }
+    
+    // 全窗口卡片容器
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        x: slide-offset-x;
+        opacity: card-opacity;
+        background: Styles.surface;
+        
+        VerticalLayout {
+            width: 100%;
+            height: 100%;
+            
+            // 顶部标题栏
+            Rectangle {
+                height: 64px;
+                background: Styles.surface;
+                border-width: 1px;
+                border-color: Styles.outline-variant;
+                
+                HorizontalLayout {
+                    padding: 16px;
+                    alignment: space-between;
+                    
+                    HorizontalLayout {
+                        spacing: 16px;
+                        alignment: start;
+                        
+                        // 应用图标
+                        Rectangle {
+                            width: 32px;
+                            height: 32px;
+                            border-radius: 8px;
+                            background: Styles.primary;
+                            
+                            Text {
+                                text: "R";
+                                color: Styles.text-on-primary;
+                                font-size: 18px;
+                                font-weight: 700;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                                font-family: Styles.font-family;
+                            }
+                        }
+                        
+                        VerticalLayout {
+                            alignment: start;
+                            spacing: 2px;
+                            
+                            Text {
+                                text: "ReMnBWarband 编辑器";
+                                font-size: 18px;
+                                font-weight: 600;
+                                color: Styles.text-primary;
+                                font-family: Styles.font-family;
+                            }
+                            
+                            Text {
+                                text: "骑马与砍杀战团剧本编辑器";
+                                font-size: 12px;
+                                color: Styles.text-secondary;
+                                font-family: Styles.font-family;
+                            }
+                        }
+                    }
+                    
+                    // 右上角收回按钮
+                    Rectangle {
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 8px;
+                        background: collapse-touch.has-hover ? Styles.surface-container-high : Styles.surface-container;
+                        border-width: 1px;
+                        border-color: collapse-touch.has-hover ? Styles.outline : Styles.outline-variant;
+                        drop-shadow-blur: collapse-touch.has-hover ? 4px : 2px;
+                        drop-shadow-color: #00000015;
+                        
+                        animate background, border-color, drop-shadow-blur {
+                            duration: 150ms;
+                            easing: ease-out;
+                        }
+                        
+                        collapse-touch := TouchArea {
+                            clicked => {
+                                root.collapse();
+                            }
+                        }
+                        
+                        Image {
+                            source: @image-url("../assets/arrow-left.svg");
+                            width: 16px;
+                            height: 16px;
+                            colorize: Styles.text-primary;
+                        }
+                    }
+                }
+            }
+            
+            // 主内容区域
+            VerticalLayout {
+                padding: 32px;
+                spacing: 24px;
+                alignment: center;
+                
+                // 标题区域
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 8px;
+                    
+                    Text {
+                        text: "欢迎使用 ReMnBWarband 编辑器";
+                        font-size: 28px;
+                        font-weight: 700;
+                        color: Styles.text-primary;
+                        horizontal-alignment: center;
+                        font-family: Styles.font-family;
+                    }
+                    
+                    Text {
+                        text: "开始编辑您的骑马与砍杀战团剧本";
+                        font-size: 16px;
+                        color: Styles.text-secondary;
+                        horizontal-alignment: center;
+                        font-family: Styles.font-family;
+                    }
+                }
+                
+                // 游戏路径区域
+                Rectangle {
+                    width: min(parent.width * 0.85, 600px);
+                    height: 160px;
+                    background: Styles.surface;
+                    border-radius: 12px;
+                    border-width: 1px;
+                    border-color: Styles.outline;
+                    drop-shadow-blur: 2px;
+                    drop-shadow-color: #00000008;
+                    
+                    VerticalLayout {
+                        padding: 24px;
+                        spacing: 20px;
+                        alignment: center;
+                    
+                            Text {
+                                text: "游戏路径";
+                                font-size: 16px;
+                                font-weight: 600;
+                                color: Styles.text-primary;
+                                font-family: Styles.font-family;
+                                horizontal-alignment: center;
+                            }
+                            
+                        HorizontalLayout {
+                            spacing: 12px;
+                            alignment: stretch;
+                            
+                            Rectangle {
+                                background: Styles.surface-container;
+                                border-radius: Styles.sizes.r-md;
+                                border-width: 2px;
+                                border-color: Styles.outline;
+                                height: 48px;
+                                
+                                property <bool> is-focused: false;
+                                
+                                animate border-color {
+                                    duration: 150ms;
+                                    easing: ease;
+                                }
+                                
+                                HorizontalLayout {
+                                    padding-left: 16px;
+                                    padding-right: 16px;
+                                    alignment: start;
+                                    
+                                    if game-path == "" : Text {
+                                        text: "请选择或输入游戏安装路径...";
+                                        font-size: 14px;
+                                        color: Styles.text-tertiary;
+                                        font-family: Styles.font-family;
+                                        vertical-alignment: center;
+                                    }
+                                    
+                                    if game-path != "" : TextInput {
+                                        text: game-path;
+                                        font-size: 14px;
+                                        color: Styles.text-primary;
+                                        font-family: Styles.font-family;
+                                        vertical-alignment: center;
+                                        horizontal-alignment: left;
+                                        
+                                        edited => {
+                                            AppBridge.game-path = self.text;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            Button {
+                                text: "浏览";
+                                icon: @image-url("../assets/folder.svg");
+                                style: "outlined";
+                                min-width: 80px;
+                                height: 48px;
+                                
+                                clicked => {
+                                    AppBridge.browse-game-path();
+                                }
+                            }
+                        }
+                        
+                        HorizontalLayout {
+                            alignment: center;
+                            padding-top: 8px;
+                            
+                            Button {
+                                text: AppBridge.is-loading ? "检测中..." : "重新检测";
+                                icon: @image-url("../assets/refresh.svg");
+                                style: "outlined";
+                                min-width: 120px;
+                                height: 40px;
+                                enabled: !AppBridge.is-loading;
+                                
+                                property <angle> icon-rotation: 0deg;
+                                
+                                animate icon-rotation {
+                                    duration: 1000ms;
+                                    easing: linear;
+                                    iteration-count: AppBridge.is-loading ? -1 : 0;
+                                }
+                                
+                                clicked => {
+                                    self.icon-rotation = self.icon-rotation + 360deg;
+                                    AppBridge.redetect-game();
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // 剧本选择卡片
+                if game-path != "" : Rectangle {
+                    width: min(parent.width * 0.85, 600px);
+                    height: 160px;
+                    background: Styles.surface;
+                    border-radius: 12px;
+                    border-width: 1px;
+                    border-color: Styles.outline;
+                    drop-shadow-blur: 2px;
+                    drop-shadow-color: #00000008;
+                        
+                        VerticalLayout {
+                            padding: 20px;
+                            spacing: 16px;
+                            alignment: center;
+                            
+                            Text {
+                                text: "剧本选择";
+                                font-size: 16px;
+                                font-weight: 600;
+                                color: Styles.text-primary;
+                                font-family: Styles.font-family;
+                                horizontal-alignment: center;
+                            }
+
+                            Rectangle {
+                                height: 60px;
+                                background: Styles.surface;
+                                border-radius: 8px;
+                                border-width: 1px;
+                                border-color: module-dropdown.has-hover ? Styles.primary : Styles.outline;
+                                
+                                
+                                animate border-color {
+                                    duration: 150ms;
+                                    easing: ease;
+                                }
+
+                                module-dropdown := TouchArea {
+                                    clicked => {
+                                        root.dropdown-open = !root.dropdown-open;
+                                    }
+                                }
+
+                                VerticalLayout {
+                                    padding: 12px;
+                                    spacing: 2px;
+                                    
+                                    Text {
+                                        text: "Native";
+                                        color: Styles.text-primary;
+                                        font-size: 14px;
+                                        font-weight: 500;
+                                        font-family: Styles.font-family;
+                                        horizontal-alignment: left;
+                                    }
+                                    
+                                    Text {
+                                        text: game-path + "/Modules/Native";
+                                        color: Styles.text-secondary;
+                                        font-size: 11px;
+                                        font-family: Styles.font-family;
+                                        horizontal-alignment: left;
+                                        overflow: elide;
+                                    }
+                                }
+                                
+                                // 下拉箭头
+                                Rectangle {
+                                    x: parent.width - 32px;
+                                    y: (parent.height - 16px) / 2;
+                                    width: 16px;
+                                    height: 16px;
+                                    
+                                    Image {
+                                        source: root.dropdown-open ? @image-url("../assets/chevron-up.svg") : @image-url("../assets/chevron-down.svg");
+                                        width: 12px;
+                                        height: 12px;
+                                        colorize: Styles.text-secondary;
+                                    }
+                                }
+                                
+                                // 下拉选项
+                                if root.dropdown-open : Rectangle {
+                                    y: parent.height + 4px;
+                                    width: parent.width;
+                                    height: min(200px, AppBridge.modules.length * 40px + 16px);
+                                    background: Styles.surface;
+                                    border-radius: Styles.sizes.r-md;
+                                    border-width: 1px;
+                                    border-color: Styles.outline;
+                                    drop-shadow-blur: 8px;
+                                    drop-shadow-color: Styles.scrim.with-alpha(0.2);
+                                    drop-shadow-offset-y: 4px;
+                                    
+                                    VerticalLayout {
+                                        padding: 8px;
+                                        spacing: 4px;
+                                        
+                                        for module[index] in AppBridge.modules : Rectangle {
+                                            height: 32px;
+                                            background: module-touch.has-hover ? Styles.primary.with-alpha(0.1) : transparent;
+                                            border-radius: 4px;
+                                            
+                                            module-touch := TouchArea {
+                                                clicked => {
+                                                    AppBridge.select-module(index);
+                                                    root.dropdown-open = false;
+                                                }
+                                            }
+                                            
+                                            HorizontalLayout {
+                                                padding-left: 12px;
+                                                padding-right: 12px;
+                                                alignment: LayoutAlignment.start;
+                                                
+                                                Text {
+                                                    text: module.text;
+                                                    color: Styles.text-primary;
+                                                    font-size: Styles.sizes.font;
+                                                    font-family: Styles.font-family;
+                                                    vertical-alignment: center;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                // 进入编辑器按钮
+                HorizontalLayout {
+                    alignment: center;
+                    
+                    Button {
+                        text: "开始编辑";
+                        style: "filled";
+                        
+                        clicked => {
+                            root.dropdown-open = false;
+                            AppBridge.enter-editor();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -11,13 +11,13 @@ export component Card {
     min-height: 100px;
     
     background := Rectangle {
-        background: Styles.palette.surface-bg;
+        background: Styles.surface-container;
         border-radius: Styles.sizes.r-lg;
         border-width: root.outlined ? Styles.sizes.line : 0px;
-        border-color: Styles.palette.border;
+        border-color: Styles.outline;
         
         drop-shadow-blur: root.elevated ? 8px : 0px;
-        drop-shadow-color: Styles.palette.shadow;
+        drop-shadow-color: Styles.scrim.with-alpha(0.1);
         drop-shadow-offset-y: root.elevated ? 4px : 0px;
     }
     
@@ -27,7 +27,7 @@ export component Card {
         
         if root.title != "": Text {
             text: root.title;
-            color: Styles.palette.surface-fg;
+            color: Styles.text-primary;
             font-family: Styles.font-family;
             font-size: Styles.sizes.font + 2px;
             font-weight: 600;

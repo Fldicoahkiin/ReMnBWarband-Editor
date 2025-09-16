@@ -1,8 +1,9 @@
 // 应用程序主ViewModel
 
 use std::sync::Arc;
-use anyhow::Result;
+use crate::data::{GameData, Item, Module};
 use crate::editor::Editor;
+use anyhow::Result;
 use crate::viewmodel::{
     BaseViewModel, BaseViewModelImpl, LoadableViewModel,
     AsyncCommand
@@ -35,8 +36,18 @@ pub struct AppViewModel {
     pub current_module: Observable<String>,
     pub data_loaded: Observable<bool>,
     
+    // 物品编辑器相关
+    pub items: Observable<Vec<Item>>,
+    pub selected_item: Observable<Option<Item>>,
+    pub selected_item_id: Observable<String>,
+    
+    // 模块相关
+    pub modules: Observable<Vec<Module>>,
+    pub selected_module: Observable<String>,
+    
     // 命令
     pub detect_game_command: AsyncCommand,
+    pub redetect_game_command: AsyncCommand,
     pub load_game_command: AsyncCommand,
     pub browse_game_path_command: Command,
 }
@@ -54,6 +65,15 @@ impl AppViewModel {
         let current_page = Observable::new("startup".to_string());
         let current_module = Observable::new("Native".to_string());
         let data_loaded = Observable::new(false);
+        
+        // 物品编辑器相关
+        let items = Observable::new(Vec::new());
+        let selected_item = Observable::new(None);
+        let selected_item_id = Observable::new(String::new());
+        
+        // 模块相关
+        let modules = Observable::new(Vec::new());
+        let selected_module = Observable::new("Native".to_string());
 
         // 检测游戏命令
         let editor_clone = Arc::clone(&editor);
@@ -73,6 +93,67 @@ impl AppViewModel {
                     None => {
                         is_game_valid_clone.set(false);
                         Err(anyhow::anyhow!("未找到游戏安装路径"))
+                    }
+                }
+            },
+            || true
+        );
+
+        // 重新检测游戏命令
+        let editor_clone2 = Arc::clone(&editor);
+        let game_path_clone2 = game_path.clone();
+        let is_game_valid_clone2 = is_game_valid.clone();
+        let app_state_clone2 = app_state.clone();
+        
+        let modules_clone = modules.clone();
+        let redetect_game_command = AsyncCommand::new(
+            move || -> Result<()> {
+                match editor_clone2.detect_game()? {
+                    Some(path) => {
+                        game_path_clone2.set(path.clone());
+                        is_game_valid_clone2.set(true);
+                        app_state_clone2.set(AppState::GameDetected);
+                        
+                        // 自动扫描模块
+                        let modules_path = std::path::Path::new(&path).join("Modules");
+                        if modules_path.exists() {
+                            let mut found_modules = vec![
+                                Module {
+                                    id: "Native".to_string(),
+                                    name: "原版剧本".to_string(),
+                                    path: modules_path.join("Native").to_string_lossy().to_string(),
+                                    is_native: true,
+                                }
+                            ];
+                            
+                            if let Ok(entries) = std::fs::read_dir(&modules_path) {
+                                for entry in entries.flatten() {
+                                    if let Ok(file_type) = entry.file_type() {
+                                        if file_type.is_dir() {
+                                            let dir_name = entry.file_name().to_string_lossy().to_string();
+                                            if dir_name != "Native" {
+                                                let module_ini = entry.path().join("module.ini");
+                                                if module_ini.exists() {
+                                                    found_modules.push(Module {
+                                                        id: dir_name.clone(),
+                                                        name: dir_name.clone(),
+                                                        path: entry.path().to_string_lossy().to_string(),
+                                                        is_native: false,
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            modules_clone.set(found_modules);
+                        }
+                        
+                        Ok(())
+                    }
+                    None => {
+                        is_game_valid_clone2.set(false);
+                        Err(anyhow::anyhow!("重新检测未找到游戏安装路径"))
                     }
                 }
             },
@@ -123,7 +204,13 @@ impl AppViewModel {
             current_page,
             current_module,
             data_loaded,
+            items,
+            selected_item,
+            selected_item_id,
+            modules,
+            selected_module,
             detect_game_command,
+            redetect_game_command,
             load_game_command,
             browse_game_path_command,
         })
@@ -231,9 +318,41 @@ impl AppViewModel {
             self.is_loading.set(true);
             self.status_message.set("正在加载游戏数据...".to_string());
             
-            // 这里应该调用实际的数据加载逻辑
-            match self.load_game_data(game_path, "Native".to_string()) {
+            // 加载物品数据
+            match self.editor.load_game(&game_path) {
                 Ok(_) => {
+                    // 创建示例物品数据（暂时用于演示）
+                    let sample_items = vec![
+                        Item {
+                            id: "itm_sword_medieval_a".to_string(),
+                            name: "中世纪剑".to_string(),
+                            item_type: "武器".to_string(),
+                            price: 150,
+                            weight: 2.5,
+                            damage: 30,
+                            armor: 0,
+                        },
+                        Item {
+                            id: "itm_leather_armor".to_string(),
+                            name: "皮甲".to_string(),
+                            item_type: "护甲".to_string(),
+                            price: 80,
+                            weight: 5.0,
+                            damage: 0,
+                            armor: 15,
+                        },
+                        Item {
+                            id: "itm_war_horse".to_string(),
+                            name: "战马".to_string(),
+                            item_type: "坐骑".to_string(),
+                            price: 500,
+                            weight: 0.0,
+                            damage: 0,
+                            armor: 0,
+                        },
+                    ];
+                    self.items.set(sample_items);
+                    self.data_loaded.set(true);
                     self.status_message.set("游戏数据加载完成".to_string());
                 }
                 Err(e) => {
@@ -242,6 +361,99 @@ impl AppViewModel {
             }
             self.is_loading.set(false);
         }
+    }
+
+    // 选择物品
+    pub fn select_item(&self, item_id: String) {
+        self.selected_item_id.set(item_id.clone());
+        
+        // 在物品列表中查找对应的物品
+        let items = self.items.get();
+        if let Some(item) = items.iter().find(|item| item.id == item_id) {
+            self.selected_item.set(Some(item.clone()));
+        }
+    }
+
+    // 保存物品修改
+    pub fn save_item(&self, id: String, name: String, item_type: String, price: f32, weight: f32, damage: f32, armor: f32) -> Result<()> {
+        let mut items = self.items.get();
+        
+        if let Some(item) = items.iter_mut().find(|item| item.id == id) {
+            let updated_item = Item {
+                id: item.id.clone(),
+                name,
+                item_type,
+                price: price as i32,
+                weight,
+                damage: damage as i32,
+                armor: armor as i32,
+            };
+            
+            *item = updated_item.clone();
+            self.items.set(items);
+            self.selected_item.set(Some(updated_item));
+            self.status_message.set("物品修改已保存".to_string());
+            
+            Ok(())
+        } else {
+            Err(anyhow::anyhow!("未找到指定的物品"))
+        }
+    }
+
+    // 扫描游戏模块
+    pub fn scan_modules(&self) -> Result<()> {
+        let game_path = self.game_path.get();
+        if game_path.is_empty() {
+            return Err(anyhow::anyhow!("游戏路径为空"));
+        }
+
+        let modules_path = std::path::Path::new(&game_path).join("Modules");
+        if !modules_path.exists() {
+            return Err(anyhow::anyhow!("未找到Modules目录"));
+        }
+
+        let mut modules = vec![
+            Module {
+                id: "Native".to_string(),
+                name: "原版剧本".to_string(),
+                path: modules_path.join("Native").to_string_lossy().to_string(),
+                is_native: true,
+            }
+        ];
+
+        // 扫描其他模块
+        if let Ok(entries) = std::fs::read_dir(&modules_path) {
+            for entry in entries.flatten() {
+                if let Ok(file_type) = entry.file_type() {
+                    if file_type.is_dir() {
+                        let dir_name = entry.file_name().to_string_lossy().to_string();
+                        if dir_name != "Native" {
+                            // 检查是否有module.ini文件
+                            let module_ini = entry.path().join("module.ini");
+                            if module_ini.exists() {
+                                modules.push(Module {
+                                    id: dir_name.clone(),
+                                    name: dir_name.clone(),
+                                    path: entry.path().to_string_lossy().to_string(),
+                                    is_native: false,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        self.modules.set(modules);
+        Ok(())
+    }
+
+    // 获取物品列表（用于UI显示）
+    pub fn get_items_for_ui(&self) -> Vec<(String, String)> {
+        self.items.get()
+            .iter()
+            .map(|item| (item.id.clone(), item.name.clone()))
+            .collect()
     }
 
     // 保存到游戏

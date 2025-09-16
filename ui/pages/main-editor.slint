@@ -1,0 +1,526 @@
+// 主编辑器页面
+import { Styles } from "../globals/styles.slint";
+import { AppBridge, UiState } from "../globals/bridges.slint";
+import { Card } from "../components/card.slint";
+import { Button } from "../components/button.slint";
+import { ItemEditor } from "../components/item-editor.slint";
+
+export component MainEditor inherits Rectangle {
+    width: 100%;
+    height: 100%;
+    background: Styles.surface;
+    
+    HorizontalLayout {
+        // 现代化侧栏
+        Rectangle {
+            width: UiState.sidebar-visible ? 280px : 0px;
+            background: Styles.surface;
+            border-width: 1px;
+            border-color: Styles.outline-variant;
+            
+            animate width {
+                duration: 300ms;
+                easing: ease-out;
+            }
+            
+            if UiState.sidebar-visible : VerticalLayout {
+                padding: 0px;
+                spacing: 0px;
+                
+                // 顶部区域
+                Rectangle {
+                    height: 64px;
+                    background: Styles.surface;
+                    
+                    HorizontalLayout {
+                        padding: 16px;
+                        alignment: start;
+                        spacing: 12px;
+                        
+                        // 应用图标
+                        Rectangle {
+                            width: 32px;
+                            height: 32px;
+                            border-radius: 8px;
+                            background: Styles.primary;
+                            
+                            Text {
+                                text: "R";
+                                color: Styles.text-on-primary;
+                                font-size: 16px;
+                                font-weight: 700;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                                font-family: Styles.font-family;
+                            }
+                        }
+                        
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 2px;
+                            
+                            Text {
+                                text: "ReMnBWarband";
+                                font-size: 14px;
+                                font-weight: 600;
+                                color: Styles.text-primary;
+                                font-family: Styles.font-family;
+                            }
+                            
+                            Text {
+                                text: "编辑器";
+                                font-size: 11px;
+                                color: Styles.text-secondary;
+                                font-family: Styles.font-family;
+                            }
+                        }
+                    }
+                }
+                
+                // 分隔线
+                Rectangle {
+                    height: 1px;
+                    background: Styles.outline-variant;
+                }
+                
+                // 导航区域
+                Rectangle {
+                    background: Styles.surface;
+                    
+                    VerticalLayout {
+                        padding: 8px;
+                        spacing: 4px;
+                        
+                        // 导航项目 - 垂直堆叠
+                        Rectangle {
+                            height: 48px;
+                            background: UiState.current-tab == 0 ? Styles.primary-container : transparent;
+                            border-radius: 12px;
+                            
+                            states [
+                                hover when nav-area-items.has-hover: {
+                                    background: UiState.current-tab == 0 ? Styles.primary-container : Styles.surface-container-high;
+                                }
+                            ]
+                            
+                            animate background {
+                                duration: 120ms;
+                                easing: ease;
+                            }
+                            
+                            nav-area-items := TouchArea {
+                                clicked => {
+                                    UiState.current-tab = 0;
+                                }
+                            }
+                            
+                            HorizontalLayout {
+                                padding: 12px;
+                                alignment: start;
+                                spacing: 12px;
+                                
+                                // 图标区域
+                                Rectangle {
+                                    width: 24px;
+                                    height: 24px;
+                                    
+                                    Text {
+                                        text: "I";
+                                        color: UiState.current-tab == 0 ? Styles.text-on-primary : Styles.text-secondary;
+                                        font-size: 16px;
+                                        font-weight: 600;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                        font-family: Styles.font-family;
+                                    }
+                                }
+                                
+                                // 标签文本
+                                Text {
+                                    text: "物品";
+                                    color: UiState.current-tab == 0 ? Styles.text-on-primary : Styles.text-primary;
+                                    font-size: 14px;
+                                    font-weight: UiState.current-tab == 0 ? 500 : 400;
+                                    font-family: Styles.font-family;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        
+                        Rectangle {
+                            height: 48px;
+                            background: UiState.current-tab == 1 ? Styles.primary-container : transparent;
+                            border-radius: 12px;
+                            
+                            states [
+                                hover when nav-area-troops.has-hover: {
+                                    background: UiState.current-tab == 1 ? Styles.primary-container : Styles.surface-container-high;
+                                }
+                            ]
+                            
+                            animate background {
+                                duration: 120ms;
+                                easing: ease;
+                            }
+                            
+                            nav-area-troops := TouchArea {
+                                clicked => {
+                                    UiState.current-tab = 1;
+                                }
+                            }
+                            
+                            HorizontalLayout {
+                                padding: 12px;
+                                alignment: start;
+                                spacing: 12px;
+                                
+                                // 图标区域
+                                Rectangle {
+                                    width: 24px;
+                                    height: 24px;
+                                    
+                                    Text {
+                                        text: "T";
+                                        color: UiState.current-tab == 1 ? Styles.text-on-primary : Styles.text-secondary;
+                                        font-size: 16px;
+                                        font-weight: 600;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                        font-family: Styles.font-family;
+                                    }
+                                }
+                                
+                                // 标签文本
+                                Text {
+                                    text: "兵种";
+                                    color: UiState.current-tab == 1 ? Styles.text-on-primary : Styles.text-primary;
+                                    font-size: 14px;
+                                    font-weight: UiState.current-tab == 1 ? 500 : 400;
+                                    font-family: Styles.font-family;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        
+                        Rectangle {
+                            height: 48px;
+                            background: UiState.current-tab == 2 ? Styles.primary-container : transparent;
+                            border-radius: 12px;
+                            
+                            states [
+                                hover when nav-area-factions.has-hover: {
+                                    background: UiState.current-tab == 2 ? Styles.primary-container : Styles.surface-container-high;
+                                }
+                            ]
+                            
+                            animate background {
+                                duration: 120ms;
+                                easing: ease;
+                            }
+                            
+                            nav-area-factions := TouchArea {
+                                clicked => {
+                                    UiState.current-tab = 2;
+                                }
+                            }
+                            
+                            HorizontalLayout {
+                                padding: 12px;
+                                alignment: start;
+                                spacing: 12px;
+                                
+                                // 图标区域
+                                Rectangle {
+                                    width: 24px;
+                                    height: 24px;
+                                    
+                                    Text {
+                                        text: "F";
+                                        color: UiState.current-tab == 2 ? Styles.text-on-primary : Styles.text-secondary;
+                                        font-size: 16px;
+                                        font-weight: 600;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                        font-family: Styles.font-family;
+                                    }
+                                }
+                                
+                                // 标签文本
+                                Text {
+                                    text: "派系";
+                                    color: UiState.current-tab == 2 ? Styles.text-on-primary : Styles.text-primary;
+                                    font-size: 14px;
+                                    font-weight: UiState.current-tab == 2 ? 500 : 400;
+                                    font-family: Styles.font-family;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+                        
+                        // 剧本选择卡片（当启动卡片收回后显示）
+                        if !UiState.startup-card-visible : Rectangle {
+                            height: 100px;
+                            background: Styles.surface-container;
+                            border-radius: 8px;
+                            border-width: 1px;
+                            border-color: Styles.outline-variant;
+                            
+                            // 简化动画，只在hover时变化背景色
+                            states [
+                                hover when script-touch.has-hover: {
+                                    background: Styles.surface-container-high;
+                                    border-color: Styles.outline;
+                                }
+                            ]
+                            
+                            animate background {
+                                duration: 150ms;
+                                easing: ease;
+                            }
+                            
+                            animate border-color {
+                                duration: 150ms;
+                                easing: ease;
+                            }
+                            
+                            script-touch := TouchArea {
+                                clicked => {
+                                    UiState.startup-card-visible = true;
+                                }
+                            }
+                            
+                            VerticalLayout {
+                                padding: 12px;
+                                spacing: 8px;
+                                alignment: center;
+                                
+                                Text {
+                                    text: "当前剧本";
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    color: Styles.text-secondary;
+                                    font-family: Styles.font-family;
+                                    horizontal-alignment: center;
+                                }
+                                
+                                HorizontalLayout {
+                                    alignment: center;
+                                    spacing: 8px;
+                                    
+                                    Text {
+                                        text: "Native";
+                                        color: Styles.text-primary;
+                                        font-size: 13px;
+                                        font-weight: 500;
+                                        font-family: Styles.font-family;
+                                    }
+                                    
+                                    Text {
+                                        text: "▶";
+                                        color: Styles.text-tertiary;
+                                        font-size: 10px;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                                
+                                Text {
+                                    text: "点击选择其他剧本";
+                                    color: Styles.text-tertiary;
+                                    font-size: 10px;
+                                    font-family: Styles.font-family;
+                                    horizontal-alignment: center;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 主内容区域
+        VerticalLayout {
+            // 现代化顶部工具栏
+            Rectangle {
+                height: 64px;
+                background: Styles.surface;
+                border-width: 1px;
+                border-color: Styles.outline-variant;
+                
+                HorizontalLayout {
+                    padding: 16px;
+                    alignment: space-between;
+                    
+                    // 左侧：标题和面包屑
+                    HorizontalLayout {
+                        alignment: start;
+                        spacing: 16px;
+                        
+                        // 侧栏切换按钮
+                        Button {
+                            width: 32px;
+                            height: 32px;
+                            text: UiState.sidebar-visible ? "◀" : "▶";
+                            style: "text";
+                            
+                            clicked => {
+                                UiState.sidebar-visible = !UiState.sidebar-visible;
+                            }
+                        }
+                        
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 2px;
+                            
+                            Text {
+                                text: UiState.current-tab == 0 ? "物品编辑" : (UiState.current-tab == 1 ? "兵种编辑" : "派系编辑");
+                                font-size: 18px;
+                                font-weight: 600;
+                                color: Styles.text-primary;
+                                font-family: Styles.font-family;
+                            }
+                            
+                            Text {
+                                text: "骑马与砍杀战团剧本编辑";
+                                font-size: 12px;
+                                color: Styles.text-secondary;
+                                font-family: Styles.font-family;
+                            }
+                        }
+                    }
+                    
+                    // 右侧：操作按钮
+                    HorizontalLayout {
+                        alignment: end;
+                        spacing: 8px;
+                        
+                        Button {
+                            text: "保存";
+                            style: "filled";
+                            
+                            clicked => {
+                                AppBridge.save-to-game();
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 内容区域
+            Rectangle {
+                background: Styles.surface;
+                
+                // 根据当前标签页显示不同内容
+                if UiState.current-tab == 0 : ItemEditor {
+                    items: AppBridge.items;
+                    loading: AppBridge.is-loading;
+                    selected-item-id: AppBridge.selected-item-id;
+                    selected-item-name: AppBridge.selected-item-name;
+                    selected-item-type: AppBridge.selected-item-type;
+                    selected-item-price: AppBridge.selected-item-price;
+                    selected-item-weight: AppBridge.selected-item-weight;
+                    selected-item-damage: AppBridge.selected-item-damage;
+                    selected-item-armor: AppBridge.selected-item-armor;
+                    
+                    item-selected(id) => {
+                        AppBridge.select-item(id);
+                    }
+                    
+                    load-items => {
+                        AppBridge.load-from-game();
+                    }
+                    
+                    save-item(id, name, type, price, weight, damage, armor) => {
+                        AppBridge.save-item(id, name, type, price, weight, damage, armor);
+                    }
+                }
+                
+                if UiState.current-tab == 1 : Rectangle {
+                    Card {
+                        x: 24px;
+                        y: 24px;
+                        width: parent.width - 48px;
+                        height: parent.height - 48px;
+                        
+                        VerticalLayout {
+                            padding: 24px;
+                            alignment: center;
+                            
+                            Text {
+                                text: "兵种编辑器";
+                                font-size: 24px;
+                                font-weight: 600;
+                                color: Styles.on-surface;
+                                horizontal-alignment: center;
+                            }
+                            
+                            Text {
+                                text: "兵种编辑功能正在开发中...";
+                                font-size: 14px;
+                                color: Styles.on-surface-variant;
+                                horizontal-alignment: center;
+                            }
+                        }
+                    }
+                }
+                
+                if UiState.current-tab == 2 : Rectangle {
+                    Card {
+                        x: 24px;
+                        y: 24px;
+                        width: parent.width - 48px;
+                        height: parent.height - 48px;
+                        
+                        VerticalLayout {
+                            padding: 24px;
+                            alignment: center;
+                            
+                            Text {
+                                text: "派系编辑器";
+                                font-size: 24px;
+                                font-weight: 600;
+                                color: Styles.on-surface;
+                                horizontal-alignment: center;
+                            }
+                            
+                            Text {
+                                text: "派系编辑功能正在开发中...";
+                                font-size: 14px;
+                                color: Styles.on-surface-variant;
+                                horizontal-alignment: center;
+                            }
+                        }
+                    }
+                }
+                
+                if UiState.current-tab == 3 : Rectangle {
+                    Card {
+                        x: 24px;
+                        y: 24px;
+                        width: parent.width - 48px;
+                        height: parent.height - 48px;
+                        
+                        VerticalLayout {
+                            padding: 24px;
+                            alignment: center;
+                            
+                            Text {
+                                text: "脚本编辑器";
+                                font-size: 24px;
+                                font-weight: 600;
+                                color: Styles.on-surface;
+                                horizontal-alignment: center;
+                            }
+                            
+                            Text {
+                                text: "Python脚本编辑功能正在开发中...";
+                                font-size: 14px;
+                                color: Styles.on-surface-variant;
+                                horizontal-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

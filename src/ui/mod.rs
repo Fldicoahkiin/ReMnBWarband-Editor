@@ -59,7 +59,7 @@ fn setup_ui_bindings(main_window: &MainWindow, app_viewmodel: &Arc<AppViewModel>
     
     // 设置初始页面
     let current_page = app_viewmodel.current_page.get();
-    app_bridge.set_current_page(current_page.clone().into());
+    app_bridge.set_current_module(current_page.clone().into());
     let page_index = match current_page.as_str() {
         "startup" => 0,
         "editor" => 1,
@@ -74,18 +74,43 @@ fn setup_ui_bindings(main_window: &MainWindow, app_viewmodel: &Arc<AppViewModel>
 fn setup_app_callbacks(main_window: &MainWindow, app_viewmodel: &Arc<AppViewModel>) -> Result<()> {
     let app_vm = Arc::clone(app_viewmodel);
     
-    // 检测游戏回调
-    main_window.global::<AppBridge>().on_detect_game({
-        let app_vm = Arc::clone(&app_vm);
+    // 获取桥接器
+    let app_bridge = main_window.global::<AppBridge>();
+    
+    // 绑定检测游戏回调
+    app_bridge.on_detect_game({
+        let view_model = app_vm.clone();
         move || {
-            if let Some(game_path) = app_vm.detect_game_path() {
-                println!("检测到游戏路径: {}", game_path);
-            } else {
-                println!("未检测到游戏路径");
+            if let Err(e) = view_model.detect_game_command.execute() {
+                eprintln!("检测游戏失败: {}", e);
             }
         }
     });
-    
+
+    // 绑定重新检测游戏回调
+    app_bridge.on_redetect_game({
+        let app_vm = Arc::clone(&app_viewmodel);
+        move || {
+            app_vm.redetect_game_command.execute();
+        }
+    });
+
+    // 设置模块选择回调
+    app_bridge.on_select_module({
+        let app_vm = Arc::clone(&app_viewmodel);
+        let window_weak = main_window.as_weak();
+        move |index| {
+            let modules = app_vm.modules.get();
+            if let Some(module) = modules.get(index as usize) {
+                app_vm.selected_module.set(module.name.clone());
+                // 同时更新UI中的当前模块显示
+                if let Some(window) = window_weak.upgrade() {
+                    window.global::<AppBridge>().set_current_module(module.name.clone().into());
+                }
+            }
+        }
+    });
+
     // 浏览游戏路径回调
     main_window.global::<AppBridge>().on_browse_game_path({
         let app_vm = Arc::clone(&app_vm);
@@ -117,6 +142,32 @@ fn setup_app_callbacks(main_window: &MainWindow, app_viewmodel: &Arc<AppViewMode
         let app_vm = Arc::clone(&app_vm);
         move || {
             app_vm.save_to_game();
+        }
+    });
+    
+    // 物品选择回调
+    main_window.global::<AppBridge>().on_select_item({
+        let app_vm = Arc::clone(&app_vm);
+        move |item_id| {
+            app_vm.select_item(item_id.to_string());
+        }
+    });
+    
+    // 物品保存回调
+    main_window.global::<AppBridge>().on_save_item({
+        let app_vm = Arc::clone(&app_vm);
+        move |id, name, item_type, price, weight, damage, armor| {
+            if let Err(e) = app_vm.save_item(
+                id.to_string(),
+                name.to_string(),
+                item_type.to_string(),
+                price,
+                weight,
+                damage,
+                armor
+            ) {
+                eprintln!("保存物品失败: {}", e);
+            }
         }
     });
     
@@ -249,8 +300,71 @@ fn setup_state_subscriptions(main_window: &MainWindow, app_viewmodel: &Arc<AppVi
         let window_weak = window_weak.clone();
         move |error| {
             if let Some(window) = window_weak.upgrade() {
-                let error_text = error.as_ref().cloned().unwrap_or_default();
+                let error_text = error.as_ref().unwrap_or(&String::new()).clone();
                 window.global::<AppBridge>().set_error_message(error_text.into());
+            }
+        }
+    });
+    
+    // 订阅物品列表变化
+    app_viewmodel.items.subscribe({
+        let window_weak = main_window.as_weak();
+        move |items| {
+            if let Some(window) = window_weak.upgrade() {
+                let ui_items: Vec<slint::StandardListViewItem> = items
+                    .iter()
+                    .map(|item| slint::StandardListViewItem::from(slint::SharedString::from(item.id.clone())))
+                    .collect();
+                window.global::<AppBridge>().set_items(slint::ModelRc::new(slint::VecModel::from(ui_items)));
+            }
+        }
+    });
+
+    // 订阅模块列表变化
+    app_viewmodel.modules.subscribe({
+        let window_weak = main_window.as_weak();
+        move |modules| {
+            if let Some(window) = window_weak.upgrade() {
+                let ui_modules: Vec<slint::StandardListViewItem> = modules
+                    .iter()
+                    .map(|module| slint::StandardListViewItem::from(slint::SharedString::from(module.name.clone())))
+                    .collect();
+                window.global::<AppBridge>().set_modules(slint::ModelRc::new(slint::VecModel::from(ui_modules)));
+            }
+        }
+    });
+    
+    // 订阅选中物品ID变化
+    app_vm.selected_item_id.subscribe({
+        let window_weak = window_weak.clone();
+        move |item_id| {
+            if let Some(window) = window_weak.upgrade() {
+                window.global::<AppBridge>().set_selected_item_id(item_id.clone().into());
+            }
+        }
+    });
+    
+    // 订阅选中物品详情变化
+    app_vm.selected_item.subscribe({
+        let window_weak = window_weak.clone();
+        move |item_option| {
+            if let Some(window) = window_weak.upgrade() {
+                if let Some(item) = item_option {
+                    window.global::<AppBridge>().set_selected_item_name(item.name.clone().into());
+                    window.global::<AppBridge>().set_selected_item_type(item.item_type.clone().into());
+                    window.global::<AppBridge>().set_selected_item_price(item.price);
+                    window.global::<AppBridge>().set_selected_item_weight(item.weight);
+                    window.global::<AppBridge>().set_selected_item_damage(item.damage);
+                    window.global::<AppBridge>().set_selected_item_armor(item.armor);
+                } else {
+                    // 清空选中项数据
+                    window.global::<AppBridge>().set_selected_item_name("".into());
+                    window.global::<AppBridge>().set_selected_item_type("".into());
+                    window.global::<AppBridge>().set_selected_item_price(0);
+                    window.global::<AppBridge>().set_selected_item_weight(0.0);
+                    window.global::<AppBridge>().set_selected_item_damage(0);
+                    window.global::<AppBridge>().set_selected_item_armor(0);
+                }
             }
         }
     });
@@ -260,7 +374,7 @@ fn setup_state_subscriptions(main_window: &MainWindow, app_viewmodel: &Arc<AppVi
         let window_weak = window_weak.clone();
         move |page| {
             if let Some(window) = window_weak.upgrade() {
-                window.global::<AppBridge>().set_current_page(page.clone().into());
+                window.global::<AppBridge>().set_current_module(page.clone().into());
                 let page_index = match page.as_str() {
                     "startup" => 0,
                     "editor" => 1,

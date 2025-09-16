@@ -10,23 +10,45 @@ export global WindowControlBridge {
 
 // 应用程序桥接器 - 连接Rust后端和Slint UI
 export global AppBridge {
-    // 属性
-    in-out property <string> game-path;
-    in-out property <bool> game-detected;
-    in-out property <bool> game-loaded;
-    in-out property <string> current-page: "startup";
-    in-out property <bool> is-loading;
-    in-out property <string> status-message: "就绪";
-    in-out property <string> error-message;
+    // 应用状态
+    in-out property <string> game-path: "";
+    in-out property <bool> game-detected: false;
+    in-out property <bool> is-game-valid: false;
+    in-out property <bool> is-loading: false;
+    in-out property <string> status-message: "";
+    in-out property <string> error-message: "";
+    
+    // 模块相关
+    in-out property <[StandardListViewItem]> modules: [];
+    in-out property <string> selected-module: "Native";
     in-out property <string> current-module: "Native";
-    in-out property <bool> data-loaded;
+    in-out property <bool> data-loaded: false;
+    
+    // 物品编辑器相关属性
+    in-out property <[StandardListViewItem]> items: [];
+    in-out property <string> selected-item-id: "";
+    in-out property <string> selected-item-name: "";
+    in-out property <string> selected-item-type: "";
+    in-out property <int> selected-item-price: 0;
+    in-out property <float> selected-item-weight: 0.0;
+    in-out property <int> selected-item-damage: 0;
+    in-out property <int> selected-item-armor: 0;
     
     // 回调函数
     callback detect-game();
+    callback redetect-game();
     callback browse-game-path();
     callback enter-editor();
+    callback start-editing();
     callback load-from-game();
     callback save-to-game();
+    
+    // 模块选择回调
+    callback select-module(int);
+    
+    // 物品编辑器回调
+    callback select-item(string);
+    callback save-item(string, string, string, float, float, float, float);
 }
 
 // 物品编辑器桥接器
@@ -120,4 +142,5 @@ export global UiState {
     in-out property <int> current-tab: 0;  // 主编辑器中的标签页
     in-out property <bool> sidebar-visible: true;
     in-out property <bool> settings-visible: false;
+    in-out property <bool> startup-card-visible: true;
 }

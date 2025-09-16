@@ -1,0 +1,155 @@
+// 通知组件 - 弹窗通知
+
+import { Styles } from "../globals/styles.slint";
+
+export component Notification inherits Rectangle {
+    in property <string> title: "通知";
+    in property <string> message: "";
+    in property <string> type: "info"; // "info", "success", "warning", "error"
+    in property <bool> show: false;
+    
+    callback close();
+    
+    // 自动关闭定时器
+    property <duration> auto-close-delay: 3000ms;
+    
+    width: 100%;
+    height: 100%;
+    
+    // 背景遮罩
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: Styles.scrim.with-alpha(0.3);
+        opacity: show ? 1.0 : 0.0;
+        
+        animate opacity {
+            duration: Styles.medium;
+            easing: ease-out;
+        }
+        
+        TouchArea {
+            clicked => {
+                root.close();
+            }
+        }
+    }
+    
+    // 通知卡片
+    Rectangle {
+        width: min(400px, parent.width - 64px);
+        height: min(200px, parent.height - 64px);
+        x: (parent.width - self.width) / 2;
+        y: show ? (parent.height - self.height) / 2 : -self.height;
+        
+        background: Styles.surface;
+        border-radius: 16px;
+        border-width: 1px;
+        border-color: Styles.outline-variant;
+        
+        drop-shadow-blur: 24px;
+        drop-shadow-color: Styles.scrim.with-alpha(0.15);
+        drop-shadow-offset-y: 8px;
+        
+        animate y {
+            duration: Styles.medium;
+            easing: ease-out;
+        }
+        
+        VerticalLayout {
+            padding: 24px;
+            spacing: 16px;
+            alignment: center;
+            
+            // 图标和标题
+            HorizontalLayout {
+                spacing: 12px;
+                alignment: start;
+                
+                // 状态图标
+                Rectangle {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 16px;
+                    background: type == "success" ? Styles.success : 
+                               (type == "error" ? Styles.error : 
+                               (type == "warning" ? Styles.warning : Styles.primary));
+                    
+                    Text {
+                        text: type == "success" ? "OK" : 
+                              (type == "error" ? "ERR" : 
+                              (type == "warning" ? "!" : "i"));
+                        color: type == "success" ? Styles.text-on-primary : 
+                               (type == "error" ? Styles.text-on-primary : 
+                               (type == "warning" ? Styles.text-on-primary : Styles.text-on-primary));
+                        font-size: 12px;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        font-family: Styles.font-family;
+                    }
+                }
+                
+                VerticalLayout {
+                    alignment: start;
+                    spacing: 4px;
+                    
+                    Text {
+                        text: title;
+                        font-size: 18px;
+                        font-weight: 600;
+                        color: Styles.text-primary;
+                        font-family: Styles.font-family;
+                    }
+                    
+                    Text {
+                        text: message;
+                        font-size: 14px;
+                        color: Styles.text-secondary;
+                        font-family: Styles.font-family;
+                        wrap: word-wrap;
+                    }
+                }
+            }
+            
+            // 操作按钮
+            HorizontalLayout {
+                alignment: end;
+                
+                Rectangle {
+                    width: 80px;
+                    height: 32px;
+                    border-radius: 8px;
+                    background: transparent;
+                    
+                    states [
+                        hover when close-area.has-hover: {
+                            background: Styles.surface-container-high;
+                        }
+                    ]
+                    
+                    animate background {
+                        duration: Styles.short;
+                        easing: ease-out;
+                    }
+                    
+                    close-area := TouchArea {
+                        clicked => {
+                            root.close();
+                        }
+                    }
+                    
+                    Text {
+                        text: "确定";
+                        color: Styles.primary;
+                        font-size: 14px;
+                        font-weight: 500;
+                        font-family: Styles.font-family;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

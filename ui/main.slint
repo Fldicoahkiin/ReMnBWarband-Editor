@@ -2,6 +2,9 @@
 
 import { AppBridge, UiState, WindowControlBridge } from "globals/bridges.slint";
 import { Styles } from "globals/styles.slint";
+import { StartupCard } from "components/startup-card.slint";
+import { MainEditor } from "pages/main-editor.slint";
+import { Notification } from "components/notification.slint";
 
 export { AppBridge, UiState, WindowControlBridge }
 
@@ -16,92 +19,80 @@ export struct GameInstance {
 
 // 主窗口组件
 export component MainWindow inherits Window {
-    title: "ReMnBWarband 编辑器";
-    width: 1200px;
-    height: 800px;
+    title: "ReMnBWarband 剧本编辑器";
     
-    property <bool> _ensure_globals: AppBridge.game-detected && UiState.current-page >= 0;
+    // 窗口属性
+    min-width: 1000px;
+    min-height: 700px;
+    preferred-width: 1200px;
+    preferred-height: 800px;
     
-    VerticalLayout {
-        Text {
-            text: "ReMnBWarband 编辑器 - " + AppBridge.status-message;
-            font-size: 24px;
-            horizontal-alignment: center;
+    // 背景
+    background: Styles.background;
+    
+    // 通知状态
+    property <bool> show-notification: false;
+    property <string> notification-title: "";
+    property <string> notification-message: "";
+    property <string> notification-type: "info";
+    
+    // 主布局
+    Rectangle {
+        width: 100%;
+        height: 100%;
+        background: Styles.background;
+        
+        // 主编辑器
+        MainEditor {
+            width: 100%;
+            height: 100%;
         }
         
-        Rectangle {
-            height: 50px;
-            HorizontalLayout {
-                Rectangle {
-                    width: 120px;
-                    height: 40px;
-                    background: #4CAF50;
-                    border-radius: 4px;
-                    
-                    TouchArea {
-                        clicked => {
-                            AppBridge.detect-game();
-                        }
-                    }
-                    
-                    Text {
-                        text: "检测游戏";
-                        color: white;
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                    }
-                }
-                
-                Rectangle {
-                    width: 120px;
-                    height: 40px;
-                    background: #2196F3;
-                    border-radius: 4px;
-                    
-                    TouchArea {
-                        clicked => {
-                            AppBridge.browse-game-path();
-                        }
-                    }
-                    
-                    Text {
-                        text: "浏览路径";
-                        color: white;
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                    }
-                }
-                
-                Rectangle {
-                    width: 120px;
-                    height: 40px;
-                    background: #FF9800;
-                    border-radius: 4px;
-                    
-                    TouchArea {
-                        clicked => {
-                            AppBridge.enter-editor();
-                        }
-                    }
-                    
-                    Text {
-                        text: "进入编辑器";
-                        color: white;
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                    }
-                }
+        // 启动卡片覆盖层
+        if UiState.startup-card-visible : StartupCard {
+            width: 100%;
+            height: 100%;
+            
+            collapse => {
+                UiState.startup-card-visible = false;
+            }
+            
+            detect-game => {
+                AppBridge.detect-game();
+                // 显示检测通知
+                root.notification-title = "游戏检测";
+                root.notification-message = "正在自动检测游戏安装路径...";
+                root.notification-type = "info";
+                root.show-notification = true;
+            }
+            
+            browse-game-path => {
+                AppBridge.browse-game-path();
+            }
+            
+            enter-editor => {
+                AppBridge.enter-editor();
+                UiState.startup-card-visible = false;
+                // 显示成功通知
+                root.notification-title = "编辑器启动";
+                root.notification-message = "成功进入编辑器，开始编辑您的剧本！";
+                root.notification-type = "success";
+                root.show-notification = true;
             }
         }
         
-        Text {
-            text: "游戏路径: " + AppBridge.game-path;
-            font-size: 14px;
-        }
-        
-        if AppBridge.error-message != "" : Text {
-            text: "错误: " + AppBridge.error-message;
-            color: red;
+        // 通知覆盖层
+        if show-notification : Notification {
+            width: 100%;
+            height: 100%;
+            title: notification-title;
+            message: notification-message;
+            type: notification-type;
+            show: show-notification;
+            
+            close => {
+                root.show-notification = false;
+            }
         }
     }
 }

@@ -1,112 +1,123 @@
-// 全局样式定义
+// 全局样式定义 - 自定义28色调色板系统
 
-// 调色板结构
-export struct Palette {
-    // 窗口基础色
-    window-bg: color,
-    window-fg: color,
+// 自定义28色调色板结构
+export struct CustomPalette {
+    // 主色系 (Primary)
+    primary-50: color,
+    primary-100: color,
+    primary-200: color,
+    primary-300: color,
+    primary-400: color,
+    primary-500: color,
+    primary-600: color,
     
-    // 主色调
-    primary-bg: color,
-    primary-fg: color,
-    primary-hover: color,
+    // 中性色系 (Neutral)
+    neutral-0: color,
+    neutral-50: color,
+    neutral-100: color,
+    neutral-200: color,
+    neutral-300: color,
+    neutral-400: color,
+    neutral-500: color,
+    neutral-600: color,
+    neutral-700: color,
+    neutral-800: color,
+    neutral-900: color,
     
-    // 表面色
-    surface-bg: color,
-    surface-fg: color,
-    surface-hover: color,
+    // 功能色系 (Functional)
+    success-400: color,
+    success-500: color,
+    warning-400: color,
+    warning-500: color,
+    error-400: color,
+    error-500: color,
     
-    // 层级色
-    layer-1: color,
-    layer-2: color,
-    layer-3: color,
-    
-    // 状态色
-    success-bg: color,
-    success-fg: color,
-    warning-bg: color,
-    warning-fg: color,
-    error-bg: color,
-    error-fg: color,
-    info-bg: color,
-    info-fg: color,
-    
-    // 边框色
-    border: color,
-    border-hover: color,
-    
-    // 阴影色
-    shadow: color,
-    shadow-strong: color,
+    // 扩展色系 (Extended)
+    accent-400: color,
+    accent-500: color,
+    info-400: color,
+    info-500: color,
 }
 
-// 浅色主题调色板
-export global LightPalette {
-    out property <Palette> palette: {
-        window-bg: #ffffff,
-        window-fg: #0f172a,
+// 浅色主题28色调色板
+export global LightTheme {
+    out property <CustomPalette> colors: {
+        // 主色系 - 蓝色系
+        primary-50: #eff6ff,
+        primary-100: #dbeafe,
+        primary-200: #bfdbfe,
+        primary-300: #93c5fd,
+        primary-400: #60a5fa,
+        primary-500: #3b82f6,
+        primary-600: #2563eb,
         
-        primary-bg: #2563eb,
-        primary-fg: #ffffff,
-        primary-hover: #1d4ed8,
+        // 中性色系 - 灰色系
+        neutral-0: #ffffff,
+        neutral-50: #f9fafb,
+        neutral-100: #f3f4f6,
+        neutral-200: #e5e7eb,
+        neutral-300: #d1d5db,
+        neutral-400: #9ca3af,
+        neutral-500: #6b7280,
+        neutral-600: #4b5563,
+        neutral-700: #374151,
+        neutral-800: #1f2937,
+        neutral-900: #111827,
         
-        surface-bg: #f8fafc,
-        surface-fg: #334155,
-        surface-hover: #f1f5f9,
+        // 功能色系
+        success-400: #34d399,
+        success-500: #10b981,
+        warning-400: #fbbf24,
+        warning-500: #f59e0b,
+        error-400: #f87171,
+        error-500: #ef4444,
         
-        layer-1: #f8fafc,
-        layer-2: #f1f5f9,
-        layer-3: #e2e8f0,
-        
-        success-bg: #10b981,
-        success-fg: #ffffff,
-        warning-bg: #f59e0b,
-        warning-fg: #ffffff,
-        error-bg: #ef4444,
-        error-fg: #ffffff,
-        info-bg: #3b82f6,
-        info-fg: #ffffff,
-        
-        border: #e2e8f0,
-        border-hover: #cbd5e1,
-        
-        shadow: #00000010,
-        shadow-strong: #00000020,
+        // 扩展色系
+        accent-400: #a78bfa,
+        accent-500: #8b5cf6,
+        info-400: #60a5fa,
+        info-500: #3b82f6,
     };
 }
 
-// 深色主题调色板
-export global DarkPalette {
-    out property <Palette> palette: {
-        window-bg: #0f172a,
-        window-fg: #f8fafc,
+// 深色主题28色调色板
+export global DarkTheme {
+    out property <CustomPalette> colors: {
+        // 主色系 - 蓝色系
+        primary-50: #1e293b,
+        primary-100: #334155,
+        primary-200: #475569,
+        primary-300: #64748b,
+        primary-400: #60a5fa,
+        primary-500: #3b82f6,
+        primary-600: #2563eb,
         
-        primary-bg: #3b82f6,
-        primary-fg: #ffffff,
-        primary-hover: #2563eb,
+        // 中性色系 - 深色系
+        neutral-0: #0f172a,
+        neutral-50: #1e293b,
+        neutral-100: #334155,
+        neutral-200: #475569,
+        neutral-300: #64748b,
+        neutral-400: #94a3b8,
+        neutral-500: #cbd5e1,
+        neutral-600: #e2e8f0,
+        neutral-700: #f1f5f9,
+        neutral-800: #f8fafc,
+        neutral-900: #ffffff,
         
-        surface-bg: #1e293b,
-        surface-fg: #cbd5e1,
-        surface-hover: #334155,
+        // 功能色系
+        success-400: #34d399,
+        success-500: #10b981,
+        warning-400: #fbbf24,
+        warning-500: #f59e0b,
+        error-400: #f87171,
+        error-500: #ef4444,
         
-        layer-1: #1e293b,
-        layer-2: #334155,
-        layer-3: #475569,
-        
-        success-bg: #10b981,
-        success-fg: #ffffff,
-        warning-bg: #f59e0b,
-        warning-fg: #ffffff,
-        error-bg: #ef4444,
-        error-fg: #ffffff,
-        info-bg: #3b82f6,
-        info-fg: #ffffff,
-        
-        border: #334155,
-        border-hover: #475569,
-        
-        shadow: #00000030,
-        shadow-strong: #00000050,
+        // 扩展色系
+        accent-400: #a78bfa,
+        accent-500: #8b5cf6,
+        info-400: #60a5fa,
+        info-500: #3b82f6,
     };
 }
 
@@ -153,13 +164,52 @@ export struct Durations {
     long: duration,
 }
 
-// 主样式系统 - 统一管理主题和设计token
+// 主样式系统 - 自定义扁平化设计系统
 export global Styles {
     // 主题切换
     in-out property <bool> is-dark-mode: false;
     
     // 当前调色板
-    out property <Palette> palette: root.is-dark-mode ? DarkPalette.palette : LightPalette.palette;
+    out property <CustomPalette> colors: root.is-dark-mode ? DarkTheme.colors : LightTheme.colors;
+    
+    // 扁平化设计颜色映射
+    out property <color> background: colors.neutral-50;
+    out property <color> surface: colors.neutral-0;
+    out property <color> surface-container: colors.neutral-50;
+    out property <color> surface-container-low: colors.neutral-50;
+    out property <color> surface-container-high: colors.neutral-200;
+    out property <color> surface-dim: colors.neutral-100;
+    
+    out property <color> primary: colors.primary-500;
+    out property <color> primary-hover: colors.primary-600;
+    out property <color> primary-light: colors.primary-400;
+    out property <color> primary-container: colors.primary-100;
+    
+    out property <color> text-primary: colors.neutral-900;
+    out property <color> text-secondary: colors.neutral-800;
+    out property <color> text-tertiary: colors.neutral-600;
+    out property <color> text-on-primary: colors.neutral-0;
+    
+    out property <color> success: colors.success-500;
+    out property <color> success-container: colors.success-400.with-alpha(0.1);
+    out property <color> warning: colors.warning-500;
+    out property <color> error: colors.error-500;
+    out property <color> error-container: colors.error-400.with-alpha(0.1);
+    
+    out property <color> border: colors.neutral-200;
+    out property <color> border-hover: colors.neutral-300;
+    out property <color> outline: colors.neutral-300;
+    out property <color> outline-variant: colors.neutral-200;
+    
+    // 兼容旧属性名
+    out property <color> on-surface: text-primary;
+    out property <color> on-surface-variant: text-secondary;
+    out property <color> on-primary: text-on-primary;
+    out property <color> secondary-container: primary-container;
+    out property <color> on-secondary-container: primary;
+    out property <color> on-success-container: success;
+    out property <color> on-error-container: error;
+    out property <color> scrim: colors.neutral-900;
     
     // 尺寸系统
     out property <Sizes> sizes: {
@@ -192,13 +242,12 @@ export global Styles {
         line: 1px,
     };
     
-    // 动画时长
-    out property <Durations> durations: {
-        short: 150ms,
-        mid: 300ms,
-        long: 500ms,
-    };
+    // 优化的动画持续时间
+    out property <duration> short: 120ms;
+    out property <duration> medium: 200ms;
+    out property <duration> long: 350ms;
+    out property <duration> extra-long: 600ms;
     
-    // 字体系统
-    out property <string> font-family: "Microsoft YaHei UI";
+    // 字体系统 - 跨平台字体栈
+    out property <string> font-family: "PingFang SC, Microsoft YaHei, Helvetica Neue, Arial, sans-serif";
 }
